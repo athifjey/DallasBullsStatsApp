@@ -52,20 +52,23 @@ const topN = (
 	rows: SheetRow[],
 	nameKey: string | null,
 	matchesKey: string | null,
+	inningsKey: string | null,
 	valueKey: string | null,
 	direction: 'asc' | 'desc',
 	limit = 5
 ): ChartRow[] => {
-	if (!nameKey || !valueKey || !matchesKey) {
+	if (!nameKey || !valueKey) {
 		return [];
 	}
 
 	const parsedRows: ChartRow[] = rows
 		.map(row => {
 			const name = (row[nameKey] ?? '').trim();
-			const matches = parseNumber(row[matchesKey]);
+			const matches = matchesKey ? parseNumber(row[matchesKey]) : null;
+			const innings = inningsKey ? parseNumber(row[inningsKey]) : null;
+			const matchCount = matches ?? innings;
 			const value = parseNumber(row[valueKey]);
-			if (!name || matches === null || matches <= 10 || value === null) {
+			if (!name || matchCount === null || matchCount <= 10 || value === null) {
 				return null;
 			}
 			return { name, value };
@@ -133,6 +136,8 @@ export const DashboardPage: React.FC = () => {
 
 		const battingMatchesKey = findColumnKey(battingRows[0], ['Matches', 'Match', 'Mat', 'M']);
 		const bowlingMatchesKey = findColumnKey(bowlingRows[0], ['Matches', 'Match', 'Mat', 'M']);
+		const battingInningsKey = findColumnKey(battingRows[0], ['Innings', 'Inns', 'Inn']);
+		const bowlingInningsKey = findColumnKey(bowlingRows[0], ['Innings', 'Inns', 'Inn']);
 
 		const wicketsKey = findColumnKey(bowlingRows[0], ['Wkts', 'Wickets', 'Wicket']);
 		const strikeRateKey = findColumnKey(battingRows[0], ['SR', 'Strike Rate', 'Strike rate']);
@@ -140,10 +145,10 @@ export const DashboardPage: React.FC = () => {
 		const economyKey = findColumnKey(bowlingRows[0], ['Econ', 'Economy', 'Eco']);
 
 		return {
-			topWickets: topN(bowlingRows, bowlingPlayerKey, bowlingMatchesKey, wicketsKey, 'desc'),
-			topStrikeRate: topN(battingRows, battingPlayerKey, battingMatchesKey, strikeRateKey, 'desc'),
-			topRuns: topN(battingRows, battingPlayerKey, battingMatchesKey, runsKey, 'desc'),
-			topEconomy: topN(bowlingRows, bowlingPlayerKey, bowlingMatchesKey, economyKey, 'asc'),
+			topWickets: topN(bowlingRows, bowlingPlayerKey, bowlingMatchesKey, bowlingInningsKey, wicketsKey, 'desc'),
+			topStrikeRate: topN(battingRows, battingPlayerKey, battingMatchesKey, battingInningsKey, strikeRateKey, 'desc'),
+			topRuns: topN(battingRows, battingPlayerKey, battingMatchesKey, battingInningsKey, runsKey, 'desc'),
+			topEconomy: topN(bowlingRows, bowlingPlayerKey, bowlingMatchesKey, bowlingInningsKey, economyKey, 'asc'),
 		};
 	}, [battingRows, bowlingRows]);
 

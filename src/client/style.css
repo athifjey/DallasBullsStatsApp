@@ -14,20 +14,27 @@
 /* ── Header ─────────────────────────────────────────────────── */
 .app-header {
 	display: flex;
-	align-items: center;
-	gap: 2rem;
+	flex-direction: column;
+	gap: 0;
 	background: #1a3a2a;
-	padding: 0 2rem;
+	padding: 0.3rem 1.25rem 0;
 	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-	flex-wrap: wrap;
+}
+
+.app-header__top-row {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: center;
+	width: 100%;
+	min-height: 52px;
 }
 
 .app-header__brand {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	padding: 0.85rem 0;
-	flex-shrink: 0;
+	justify-content: center;
+	padding: 0.5rem 0;
 }
 
 .app-header__logo {
@@ -39,6 +46,7 @@
 	font-weight: 700;
 	color: #ffffff;
 	letter-spacing: 0.5px;
+	text-align: center;
 }
 
 /* ── Navigation ─────────────────────────────────────────────── */
@@ -46,6 +54,8 @@
 	display: flex;
 	gap: 0.25rem;
 	flex-wrap: wrap;
+	justify-content: center;
+	width: 100%;
 }
 
 .app-nav__item {
@@ -68,6 +78,252 @@
 .app-nav__item--active {
 	color: #ffffff;
 	border-bottom-color: #4caf72;
+}
+
+.app-header__menu-btn {
+	display: none;
+	border: 1px solid #3f5f4f;
+	background: #234634;
+	color: #fff;
+	border-radius: 7px;
+	padding: 0.5rem 0.8rem;
+	font-weight: 700;
+	font-size: 0.82rem;
+	cursor: pointer;
+}
+
+.app-header__menu-spacer {
+	display: none;
+	width: 64px;
+	height: 1px;
+}
+
+.app-header__menu-btn:hover {
+	background: #2b5842;
+}
+
+.app-side-nav {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100vh;
+	width: min(78vw, 320px);
+	background: #163424;
+	box-shadow: 2px 0 18px rgba(0, 0, 0, 0.25);
+	transform: translateX(-105%);
+	transition: transform 0.2s ease;
+	z-index: 1200;
+	display: flex;
+	flex-direction: column;
+}
+
+.app-side-nav--open {
+	transform: translateX(0);
+}
+
+.app-side-nav__backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+	border: 0;
+	padding: 0;
+	margin: 0;
+	z-index: 1100;
+	cursor: pointer;
+}
+
+.app-side-nav__header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1rem;
+	border-bottom: 1px solid rgba(173, 206, 188, 0.16);
+}
+
+.app-side-nav__title {
+	color: #fff;
+	font-weight: 700;
+	font-size: 1rem;
+}
+
+.app-side-nav__close {
+	border: 1px solid #476956;
+	background: #234634;
+	color: #fff;
+	border-radius: 6px;
+	padding: 0.35rem 0.65rem;
+	font-size: 0.78rem;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.app-side-nav__list {
+	display: grid;
+	gap: 0.3rem;
+	padding: 0.8rem;
+}
+
+.app-side-nav__item {
+	border: 0;
+	background: transparent;
+	color: #b9d3c6;
+	padding: 0.75rem 0.85rem;
+	text-align: left;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.app-side-nav__item:hover {
+	background: rgba(115, 166, 142, 0.15);
+	color: #fff;
+}
+
+.app-side-nav__item--active {
+	background: rgba(115, 166, 142, 0.22);
+	color: #fff;
+}
+
+@media (min-width: 1025px) {
+	.app-side-nav,
+	.app-side-nav__backdrop {
+		display: none;
+	}
+}
+
+@media (max-width: 1024px) {
+	.app-header {
+		padding: 0.35rem 0.85rem 0;
+	}
+
+	.app-header__top-row {
+		min-height: 50px;
+	}
+
+	.app-nav--desktop {
+		display: none;
+	}
+
+	.app-header__menu-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-self: start;
+	}
+
+	.app-header__menu-spacer {
+		display: block;
+		justify-self: end;
+	}
+
+	.app-header__brand {
+		padding: 0;
+	}
+
+	.app-header__title {
+		font-size: 1rem;
+	}
+
+	.app-content {
+		padding: 1rem;
+	}
+}
+
+/* ── Dashboard ──────────────────────────────────────────────── */
+.dashboard-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+}
+
+.dashboard-card {
+	background: #fff;
+	border: 1px solid #dce8e2;
+	border-radius: 12px;
+	padding: 1rem;
+	box-shadow: 0 6px 16px rgba(23, 45, 33, 0.06);
+}
+
+.dashboard-card__title {
+	margin: 0 0 0.75rem;
+	font-size: 1rem;
+	font-weight: 700;
+	color: #1a3a2a;
+}
+
+.dashboard-card__empty {
+	padding: 0.65rem;
+	color: #65786f;
+	font-size: 0.88rem;
+	background: #f6faf8;
+	border: 1px dashed #c9dbd2;
+	border-radius: 8px;
+}
+
+.dashboard-bars {
+	display: grid;
+	gap: 0.65rem;
+}
+
+.dashboard-bars__row {
+	display: grid;
+	gap: 0.35rem;
+}
+
+.dashboard-bars__meta {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.7rem;
+	font-size: 0.85rem;
+}
+
+.dashboard-bars__name {
+	color: #264938;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dashboard-bars__value {
+	color: #1a3a2a;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+
+.dashboard-bars__track {
+	background: #edf4f0;
+	border-radius: 999px;
+	height: 10px;
+	overflow: hidden;
+}
+
+.dashboard-bars__fill {
+	height: 100%;
+	min-width: 2px;
+	border-radius: 999px;
+}
+
+.dashboard-bars__fill--wickets {
+	background: linear-gradient(90deg, #2f8f62, #49b57f);
+}
+
+.dashboard-bars__fill--strike-rate {
+	background: linear-gradient(90deg, #2f6ea6, #499ad7);
+}
+
+.dashboard-bars__fill--runs {
+	background: linear-gradient(90deg, #9c5e19, #d7882f);
+}
+
+.dashboard-bars__fill--economy {
+	background: linear-gradient(90deg, #6f4ea2, #9071c0);
+}
+
+@media (max-width: 900px) {
+	.dashboard-grid {
+		grid-template-columns: 1fr;
+	}
 }
 
 /* ── Page ───────────────────────────────────────────────────── */

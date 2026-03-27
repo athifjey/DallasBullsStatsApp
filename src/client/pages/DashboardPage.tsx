@@ -51,19 +51,21 @@ const findPlayerNameKey = (row: SheetRow | undefined): string | null => {
 const topN = (
 	rows: SheetRow[],
 	nameKey: string | null,
+	matchesKey: string | null,
 	valueKey: string | null,
 	direction: 'asc' | 'desc',
 	limit = 5
 ): ChartRow[] => {
-	if (!nameKey || !valueKey) {
+	if (!nameKey || !valueKey || !matchesKey) {
 		return [];
 	}
 
 	const parsedRows: ChartRow[] = rows
 		.map(row => {
 			const name = (row[nameKey] ?? '').trim();
+			const matches = parseNumber(row[matchesKey]);
 			const value = parseNumber(row[valueKey]);
-			if (!name || value === null) {
+			if (!name || matches === null || matches <= 10 || value === null) {
 				return null;
 			}
 			return { name, value };
@@ -129,16 +131,19 @@ export const DashboardPage: React.FC = () => {
 		const battingPlayerKey = findPlayerNameKey(battingRows[0]);
 		const bowlingPlayerKey = findPlayerNameKey(bowlingRows[0]);
 
+		const battingMatchesKey = findColumnKey(battingRows[0], ['Matches', 'Match', 'Mat', 'M']);
+		const bowlingMatchesKey = findColumnKey(bowlingRows[0], ['Matches', 'Match', 'Mat', 'M']);
+
 		const wicketsKey = findColumnKey(bowlingRows[0], ['Wkts', 'Wickets', 'Wicket']);
 		const strikeRateKey = findColumnKey(battingRows[0], ['SR', 'Strike Rate', 'Strike rate']);
 		const runsKey = findColumnKey(battingRows[0], ['Runs', 'Run']);
 		const economyKey = findColumnKey(bowlingRows[0], ['Econ', 'Economy', 'Eco']);
 
 		return {
-			topWickets: topN(bowlingRows, bowlingPlayerKey, wicketsKey, 'desc'),
-			topStrikeRate: topN(battingRows, battingPlayerKey, strikeRateKey, 'desc'),
-			topRuns: topN(battingRows, battingPlayerKey, runsKey, 'desc'),
-			topEconomy: topN(bowlingRows, bowlingPlayerKey, economyKey, 'asc'),
+			topWickets: topN(bowlingRows, bowlingPlayerKey, bowlingMatchesKey, wicketsKey, 'desc'),
+			topStrikeRate: topN(battingRows, battingPlayerKey, battingMatchesKey, strikeRateKey, 'desc'),
+			topRuns: topN(battingRows, battingPlayerKey, battingMatchesKey, runsKey, 'desc'),
+			topEconomy: topN(bowlingRows, bowlingPlayerKey, bowlingMatchesKey, economyKey, 'asc'),
 		};
 	}, [battingRows, bowlingRows]);
 
@@ -161,25 +166,25 @@ export const DashboardPage: React.FC = () => {
 			{!loading && !error && (
 				<div className="dashboard-grid">
 					<ChartCard
-						title="Top 5 Wicket Takers"
+						title="Top 5 Wicket Takers (min 10 matches)"
 						accentClass="dashboard-bars__fill--wickets"
 						valueFormatter={value => value.toFixed(0)}
 						rows={charts.topWickets}
 					/>
 					<ChartCard
-						title="Top 5 Strike Rate"
+						title="Top 5 Strike Rate (min 10 matches)"
 						accentClass="dashboard-bars__fill--strike-rate"
 						valueFormatter={value => value.toFixed(2)}
 						rows={charts.topStrikeRate}
 					/>
 					<ChartCard
-						title="Top 5 Run Getters"
+						title="Top 5 Run Getters (min 10 matches)"
 						accentClass="dashboard-bars__fill--runs"
 						valueFormatter={value => value.toFixed(0)}
 						rows={charts.topRuns}
 					/>
 					<ChartCard
-						title="Top 5 Economy Bowlers"
+						title="Top 5 Economy Bowlers (min 10 matches)"
 						accentClass="dashboard-bars__fill--economy"
 						valueFormatter={value => value.toFixed(2)}
 						rows={charts.topEconomy}

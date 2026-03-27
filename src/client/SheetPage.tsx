@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { fetchSheetData, SheetRow } from './sheetsApi';
 
 interface SheetPageProps {
@@ -7,15 +7,21 @@ interface SheetPageProps {
 	description?: string;
 }
 
+type SortDir = 'asc' | 'desc';
+
 export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, description }) => {
 	const [rows, setRows] = useState<SheetRow[]>([]);
 	const [headers, setHeaders] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [sortKey, setSortKey] = useState<string | null>(null);
+	const [sortDir, setSortDir] = useState<SortDir>('asc');
 
 	useEffect(() => {
 		setLoading(true);
 		setError(null);
+		setSortKey(null);
+		setSortDir('asc');
 		fetchSheetData(sheetName)
 			.then(data => {
 				setRows(data);
@@ -27,6 +33,32 @@ export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, descript
 				setLoading(false);
 			});
 	}, [sheetName]);
+
+	const handleSort = (col: string) => {
+		if (sortKey === col) {
+			setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+		} else {
+			setSortKey(col);
+			setSortDir('asc');
+		}
+	};
+
+	const sortedRows = useMemo(() => {
+		if (!sortKey) return rows;
+		return [...rows].sort((a, b) => {
+			const av = a[sortKey] ?? '';
+			const bv = b[sortKey] ?? '';
+			const an = parseFloat(av);
+			const bn = parseFloat(bv);
+			let cmp: number;
+			if (!isNaN(an) && !isNaN(bn)) {
+				cmp = an - bn;
+			} else {
+				cmp = av.localeCompare(bv);
+			}
+			return sortDir === 'asc' ? cmp : -cmp;
+		});
+	}, [rows, sortKey, sortDir]);
 
 	return (
 		<div className="page">
@@ -58,12 +90,21 @@ export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, descript
 						<thead>
 							<tr>
 								{headers.map(h => (
-									<th key={h}>{h}</th>
+									<th
+										key={h}
+										className={`sortable-th${sortKey === h ? ' sort-active' : ''}`}
+										onClick={() => handleSort(h)}
+									>
+										{h}
+										<span className="sort-arrow">
+											{sortKey === h ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ' ↕'}
+										</span>
+									</th>
 								))}
 							</tr>
 						</thead>
 						<tbody>
-							{rows.map((row, i) => (
+							{sortedRows.map((row, i) => (
 								<tr key={i} className={i % 2 === 0 ? 'row-even' : 'row-odd'}>
 									{headers.map(h => (
 										<td key={h}>{row[h]}</td>

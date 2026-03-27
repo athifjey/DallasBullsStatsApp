@@ -406,6 +406,28 @@
 	white-space: nowrap;
 }
 
+.sortable-th {
+	cursor: pointer;
+	user-select: none;
+}
+
+.sortable-th:hover {
+	background: #254d38;
+}
+
+.sortable-th.sort-active {
+	background: #2e6b4a;
+}
+
+.sort-arrow {
+	opacity: 0.6;
+	font-size: 0.75em;
+}
+
+.sortable-th.sort-active .sort-arrow {
+	opacity: 1;
+}
+
 .data-table td {
 	padding: 9px 14px;
 	font-size: 0.875rem;

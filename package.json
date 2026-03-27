@@ -29,6 +29,7 @@
 		"compile:extension": "tsc -b",
 		"compile:client": "webpack --mode production",
 		"compile:browser": "webpack --config webpack.browser.config.js --mode production",
+		"build:pages": "npm run compile:browser && node scripts/build-pages.mjs",
 		"serve:browser": "python3 -m http.server 5173",
 		"run:browser": "npm run compile:browser && npm run serve:browser",
 		"lint": "eslint",

@@ -6,5 +6,7 @@ export const BattingSummaryPage: React.FC = () => (
 		sheetName="Batting Summary"
 		title="Batting Summary"
 		description="Overall batting statistics for all players."
+		defaultSortKey="Runs"
+		defaultSortDir="desc"
 	/>
 );

@@ -6,5 +6,7 @@ export const BowlingSummaryPage: React.FC = () => (
 		sheetName="Bowling Summary"
 		title="Bowling Summary"
 		description="Overall bowling statistics for all players."
+		defaultSortKey="Wickets"
+		defaultSortDir="desc"
 	/>
 );

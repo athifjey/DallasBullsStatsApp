@@ -5,11 +5,13 @@ interface SheetPageProps {
 	sheetName: string;
 	title: string;
 	description?: string;
+	defaultSortKey?: string;
+	defaultSortDir?: SortDir;
 }
 
 type SortDir = 'asc' | 'desc';
 
-export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, description }) => {
+export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, description, defaultSortKey, defaultSortDir }) => {
 	const [rows, setRows] = useState<SheetRow[]>([]);
 	const [headers, setHeaders] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,15 @@ export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, descript
 		fetchSheetData(sheetName)
 			.then(data => {
 				setRows(data);
-				setHeaders(data.length > 0 ? Object.keys(data[0]) : []);
+				const cols = data.length > 0 ? Object.keys(data[0]) : [];
+				setHeaders(cols);
+				if (defaultSortKey) {
+					const match = cols.find(c => c.toLowerCase().includes(defaultSortKey.toLowerCase()));
+					if (match) {
+						setSortKey(match);
+						setSortDir(defaultSortDir ?? 'asc');
+					}
+				}
 				setLoading(false);
 			})
 			.catch(err => {

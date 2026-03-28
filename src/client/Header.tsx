@@ -49,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({ activePage, onNavigate }) => {
 					</button>
 
 					<div className="app-header__brand">
-						<span className="app-header__logo">🏏</span>
+						<img src="./assets/logo.png" alt="Dallas Bulls" className="app-header__logo" />
 						<span className="app-header__title">Dallas Bulls Stats</span>
 					</div>
 

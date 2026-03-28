@@ -13,6 +13,8 @@ const distBundlePath = resolve(distDir, 'browser.js');
 const noJekyllPath = resolve(distDir, '.nojekyll');
 const assetsDir = resolve(repoRoot, 'assets');
 const distAssetsDir = resolve(distDir, 'assets');
+const manifestSrc = resolve(repoRoot, 'manifest.json');
+const swSrc = resolve(repoRoot, 'sw.js');
 
 await rm(distDir, { recursive: true, force: true });
 await mkdir(distDir, { recursive: true });
@@ -23,6 +25,10 @@ const pageHtml = html.replace('./out/browser/browser.js', './browser.js');
 await writeFile(distIndexPath, pageHtml, 'utf8');
 await copyFile(browserBundlePath, distBundlePath);
 await writeFile(noJekyllPath, '', 'utf8');
+
+// Copy PWA files
+await copyFile(manifestSrc, resolve(distDir, 'manifest.json'));
+await copyFile(swSrc, resolve(distDir, 'sw.js'));
 
 // Copy assets folder (images, etc.)
 try {

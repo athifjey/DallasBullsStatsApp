@@ -40,7 +40,11 @@
 }
 
 .app-header__logo {
-	font-size: 1.4rem;
+	height: 36px;
+	width: 36px;
+	object-fit: contain;
+	border-radius: 50%;
+	border: 2px solid rgba(255,255,255,0.2);
 }
 
 .app-header__title {

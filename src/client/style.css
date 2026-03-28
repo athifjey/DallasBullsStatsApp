@@ -569,3 +569,68 @@
 .modal-card__close:hover {
 	background: #e6f0eb;
 }
+
+/* ── Recent Performance Card ────────────────────────────────── */
+.recent-perf-card {
+	background: #f3f8f5;
+	border: 1px solid #c6dece;
+	border-radius: 8px;
+	padding: 1rem 1.2rem;
+	margin-bottom: 1rem;
+}
+
+.recent-perf-card__header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.5rem 1rem;
+	margin-bottom: 0.85rem;
+}
+
+.recent-perf-card__player {
+	font-size: 1rem;
+	font-weight: 700;
+	color: #1a3a2a;
+}
+
+.recent-perf-card__label {
+	font-size: 0.78rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #2e6b4a;
+}
+
+.recent-perf-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+}
+
+.recent-perf-stat {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	background: #fff;
+	border: 1px solid #d4e8dc;
+	border-radius: 6px;
+	padding: 0.55rem 1.1rem;
+	min-width: 90px;
+}
+
+.recent-perf-stat__val {
+	font-size: 1.35rem;
+	font-weight: 700;
+	color: #1a3a2a;
+	line-height: 1.2;
+}
+
+.recent-perf-stat__lbl {
+	font-size: 0.7rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+	color: #5a7d6a;
+	margin-top: 0.2rem;
+	text-align: center;
+}

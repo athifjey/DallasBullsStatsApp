@@ -16,6 +16,70 @@ const resolvePlayerNameKey = (rows: SheetRow[]): string | null => {
 	return fallback ?? null;
 };
 
+const findCol = (headers: string[], patterns: RegExp[]): string | undefined => {
+	for (const pat of patterns) {
+		const match = headers.find(h => pat.test(h.trim()));
+		if (match) return match;
+	}
+	return undefined;
+};
+
+const parseNum = (val: string | undefined) => {
+	const n = parseFloat((val ?? '').replace(/\*/g, '').trim());
+	return isNaN(n) ? 0 : n;
+};
+
+interface RecentPerf {
+	matches: number;
+	totalRuns: number | null;
+	totalFours: number | null;
+	totalSixes: number | null;
+	notOuts: number;
+	average: string | null;
+	strikeRate: string | null;
+}
+
+const computeRecentPerf = (rows: SheetRow[]): RecentPerf | null => {
+	const last5 = rows.slice(-5);
+	if (!last5.length) return null;
+
+	const headers = Object.keys(last5[0]);
+
+	const runsCol     = findCol(headers, [/^runs?$/i, /^r$/i, /^score$/i, /runs/i]);
+	const foursCol    = findCol(headers, [/^4s?$/i, /^fours?$/i]);
+	const sixesCol    = findCol(headers, [/^6s?$/i, /^sixes?$/i]);
+	const notOutCol   = findCol(headers, [/not[\s_-]?out/i, /^n\/o$/i, /^no$/i]);
+	const ballsCol    = findCol(headers, [/^balls?$/i, /^bf$/i]);
+	const dismissalCol = findCol(headers, [/dismissal/i, /how[\s_-]?out/i]);
+
+	const totalRuns  = runsCol  ? last5.reduce((s, r) => s + parseNum(r[runsCol]),  0) : null;
+	const totalFours = foursCol ? last5.reduce((s, r) => s + parseNum(r[foursCol]), 0) : null;
+	const totalSixes = sixesCol ? last5.reduce((s, r) => s + parseNum(r[sixesCol]), 0) : null;
+	const totalBalls = ballsCol ? last5.reduce((s, r) => s + parseNum(r[ballsCol]), 0) : null;
+
+	let notOuts = 0;
+	if (notOutCol) {
+		notOuts = last5.filter(r => {
+			const v = (r[notOutCol] ?? '').toLowerCase().trim();
+			return v === 'yes' || v === '1' || v === 'true' || v === 'not out' || v === 'n/o';
+		}).length;
+	} else if (dismissalCol) {
+		notOuts = last5.filter(r => (r[dismissalCol] ?? '').toLowerCase().includes('not out')).length;
+	} else if (runsCol) {
+		notOuts = last5.filter(r => (r[runsCol] ?? '').includes('*')).length;
+	}
+
+	const outs = last5.length - notOuts;
+	const average = totalRuns !== null
+		? (outs > 0 ? (totalRuns / outs).toFixed(2) : 'N/A')
+		: null;
+	const strikeRate = totalRuns !== null && totalBalls !== null && totalBalls > 0
+		? ((totalRuns / totalBalls) * 100).toFixed(2)
+		: null;
+
+	return { matches: last5.length, totalRuns, totalFours, totalSixes, notOuts, average, strikeRate };
+};
+
 export const BattingHistoryPage: React.FC = () => {
 	const [rows, setRows] = useState<SheetRow[]>([]);
 	const [error, setError] = useState<string | null>(null);
@@ -68,6 +132,8 @@ export const BattingHistoryPage: React.FC = () => {
 		() => (selectedPlayerRows.length ? Object.keys(selectedPlayerRows[0]) : []),
 		[selectedPlayerRows]
 	);
+
+	const recentPerf = useMemo(() => computeRecentPerf(selectedPlayerRows), [selectedPlayerRows]);
 
 	const filteredPlayers = useMemo(() => {
 		const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -152,6 +218,51 @@ export const BattingHistoryPage: React.FC = () => {
 								Close
 							</button>
 						</div>
+
+						{recentPerf && (
+							<div className="recent-perf-card">
+								<div className="recent-perf-card__header">
+									<span className="recent-perf-card__player">{selectedPlayer}</span>
+									<span className="recent-perf-card__label">Recent Performance (Last {recentPerf.matches} Matches)</span>
+								</div>
+								<div className="recent-perf-stats">
+									{recentPerf.totalRuns !== null && (
+										<div className="recent-perf-stat">
+											<span className="recent-perf-stat__val">{recentPerf.totalRuns}</span>
+											<span className="recent-perf-stat__lbl">Total Runs</span>
+										</div>
+									)}
+									{recentPerf.totalFours !== null && (
+										<div className="recent-perf-stat">
+											<span className="recent-perf-stat__val">{recentPerf.totalFours}</span>
+											<span className="recent-perf-stat__lbl">Total 4s</span>
+										</div>
+									)}
+									{recentPerf.totalSixes !== null && (
+										<div className="recent-perf-stat">
+											<span className="recent-perf-stat__val">{recentPerf.totalSixes}</span>
+											<span className="recent-perf-stat__lbl">Total 6s</span>
+										</div>
+									)}
+									<div className="recent-perf-stat">
+										<span className="recent-perf-stat__val">{recentPerf.notOuts}</span>
+										<span className="recent-perf-stat__lbl">Not Outs</span>
+									</div>
+									{recentPerf.strikeRate !== null && (
+										<div className="recent-perf-stat">
+											<span className="recent-perf-stat__val">{recentPerf.strikeRate}</span>
+											<span className="recent-perf-stat__lbl">Strike Rate</span>
+										</div>
+									)}
+									{recentPerf.average !== null && (
+										<div className="recent-perf-stat">
+											<span className="recent-perf-stat__val">{recentPerf.average}</span>
+											<span className="recent-perf-stat__lbl">Average</span>
+										</div>
+									)}
+								</div>
+							</div>
+						)}
 
 						<div className="table-wrapper">
 							<table className="data-table">

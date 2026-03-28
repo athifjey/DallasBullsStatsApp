@@ -154,9 +154,15 @@ export const DashboardPage: React.FC = () => {
 
 	return (
 		<div className="page">
-			<div className="page__header">
-				<h2 className="page__title">Dashboard</h2>
-				<p className="page__description">Top performers snapshot for Dallas Bulls.</p>
+			<div
+				className="dashboard-banner"
+				style={{ backgroundImage: 'url(./assets/team-banner.jpg)' }}
+			>
+				<div className="dashboard-banner__vignette" />
+				<div className="dashboard-banner__content">
+					<h2 className="dashboard-banner__title">Dallas Bulls</h2>
+					<p className="dashboard-banner__sub">Cricket Team Statistics</p>
+				</div>
 			</div>
 
 			{loading && (

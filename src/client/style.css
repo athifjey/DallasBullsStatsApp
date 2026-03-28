@@ -237,12 +237,21 @@
 	position: relative;
 	width: 100%;
 	height: 280px;
-	background-size: cover;
-	background-position: center 35%;
 	overflow: hidden;
 	border-radius: 10px;
 	margin-bottom: 1.75rem;
 	flex-shrink: 0;
+	background-color: #0a2419;
+}
+
+.dashboard-banner__video {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center center;
 }
 
 .dashboard-banner__vignette {

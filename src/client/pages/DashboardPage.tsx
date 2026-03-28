@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchSheetData, SheetRow } from '../sheetsApi';
 
 interface ChartRow {
@@ -110,6 +110,7 @@ const ChartCard: React.FC<ChartConfig> = ({ title, accentClass, valueFormatter, 
 };
 
 export const DashboardPage: React.FC = () => {
+	const videoRef = useRef<HTMLVideoElement>(null);
 	const [battingRows, setBattingRows] = useState<SheetRow[]>([]);
 	const [bowlingRows, setBowlingRows] = useState<SheetRow[]>([]);
 	const [error, setError] = useState<string | null>(null);
@@ -154,10 +155,21 @@ export const DashboardPage: React.FC = () => {
 
 	return (
 		<div className="page">
-			<div
-				className="dashboard-banner"
-				style={{ backgroundImage: 'url(./assets/team-banner.jpg)' }}
-			>
+			<div className="dashboard-banner">
+				<video
+					ref={videoRef}
+					className="dashboard-banner__video"
+					autoPlay
+					muted
+					loop
+					playsInline
+					poster="./assets/team-banner.jpg"
+					onCanPlay={() => { if (videoRef.current) videoRef.current.playbackRate = 0.6; }}
+				>
+					<source src="https://videos.pexels.com/video-files/32660384/13925195_2560_1440_24fps.mp4" type="video/mp4" />
+					<source src="https://videos.pexels.com/video-files/35260711/14938100_2560_1440_24fps.mp4" type="video/mp4" />
+					<source src="https://videos.pexels.com/video-files/33907672/14389701_2560_1440_30fps.mp4" type="video/mp4" />
+				</video>
 				<div className="dashboard-banner__vignette" />
 				<div className="dashboard-banner__content">
 					<h2 className="dashboard-banner__title">Dallas Bulls</h2>

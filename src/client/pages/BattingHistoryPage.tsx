@@ -125,13 +125,28 @@ export const BattingHistoryPage: React.FC = () => {
 			return [];
 		}
 
-		return rows.filter(row => (row[playerNameKey] ?? '').trim() === selectedPlayer);
+		const filtered = rows.filter(row => (row[playerNameKey] ?? '').trim() === selectedPlayer);
+
+		// Sort by date column descending (most recent first)
+		const dateCol = filtered.length
+			? Object.keys(filtered[0]).find(h => /date/i.test(h))
+			: undefined;
+
+		if (dateCol) {
+			return [...filtered].sort((a, b) => {
+				const da = new Date(a[dateCol] ?? '').getTime();
+				const db = new Date(b[dateCol] ?? '').getTime();
+				return (isNaN(db) ? 0 : db) - (isNaN(da) ? 0 : da);
+			});
+		}
+
+		return filtered;
 	}, [rows, selectedPlayer, playerNameKey]);
 
-	const modalHeaders = useMemo(
-		() => (selectedPlayerRows.length ? Object.keys(selectedPlayerRows[0]) : []),
-		[selectedPlayerRows]
-	);
+	const modalHeaders = useMemo(() => {
+		if (!selectedPlayerRows.length) return [];
+		return Object.keys(selectedPlayerRows[0]).filter(h => h !== playerNameKey);
+	}, [selectedPlayerRows, playerNameKey]);
 
 	const recentPerf = useMemo(() => computeRecentPerf(selectedPlayerRows), [selectedPlayerRows]);
 

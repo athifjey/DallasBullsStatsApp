@@ -42,7 +42,7 @@
 }
 
 .app-header__title {
-	font-family: 'Oswald', sans-serif;
+	font-family: 'Racing Sans One', sans-serif;
 	font-size: 1.1rem;
 	font-weight: 600;
 	color: #ffffff;
@@ -264,7 +264,7 @@
 
 .dashboard-banner__title {
 	margin: 0 0 0.3rem;
-	font-family: 'Oswald', sans-serif;
+	font-family: 'Racing Sans One', sans-serif;
 	font-size: 2.6rem;
 	font-weight: 700;
 	letter-spacing: 1px;
@@ -309,7 +309,7 @@
 
 .dashboard-card__title {
 	margin: 0 0 0.75rem;
-	font-family: 'Oswald', sans-serif;
+	font-family: 'Racing Sans One', sans-serif;
 	font-size: 1rem;
 	font-weight: 600;
 	letter-spacing: 0.5px;
@@ -402,7 +402,7 @@
 }
 
 .page__title {
-	font-family: 'Oswald', sans-serif;
+	font-family: 'Racing Sans One', sans-serif;
 	font-size: 1.6rem;
 	font-weight: 600;
 	letter-spacing: 0.5px;
@@ -621,7 +621,7 @@
 
 .modal-card__title {
 	margin: 0;
-	font-family: 'Oswald', sans-serif;
+	font-family: 'Racing Sans One', sans-serif;
 	font-size: 1.2rem;
 	font-weight: 600;
 	letter-spacing: 0.5px;
@@ -660,7 +660,7 @@
 }
 
 .recent-perf-card__player {
-	font-family: 'Oswald', sans-serif;
+	font-family: 'Racing Sans One', sans-serif;
 	font-size: 1.15rem;
 	font-weight: 600;
 	letter-spacing: 0.5px;

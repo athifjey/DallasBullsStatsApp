@@ -154,11 +154,11 @@ export const DashboardPage: React.FC = () => {
 	}, [battingRows, bowlingRows]);
 
 	return (
-		<div className="page">
-			<div className="dashboard-banner">
+		<div className="page dashboard-page">
+			<div className="dashboard-bg">
 				<video
 					ref={videoRef}
-					className="dashboard-banner__video"
+					className="dashboard-bg__video"
 					autoPlay
 					muted
 					loop
@@ -170,11 +170,12 @@ export const DashboardPage: React.FC = () => {
 					<source src="https://videos.pexels.com/video-files/35260711/14938100_2560_1440_24fps.mp4" type="video/mp4" />
 					<source src="https://videos.pexels.com/video-files/33907672/14389701_2560_1440_30fps.mp4" type="video/mp4" />
 				</video>
-				<div className="dashboard-banner__vignette" />
-				<div className="dashboard-banner__content">
-					<h2 className="dashboard-banner__title">Dallas Bulls</h2>
-					<p className="dashboard-banner__sub">Cricket Team Statistics</p>
-				</div>
+				<div className="dashboard-bg__overlay" />
+			</div>
+
+			<div className="dashboard-hero">
+				<h2 className="dashboard-hero__title">Dallas Bulls</h2>
+				<p className="dashboard-hero__sub">Cricket Team Statistics</p>
 			</div>
 
 			{loading && (

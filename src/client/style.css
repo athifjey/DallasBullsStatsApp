@@ -448,6 +448,23 @@
 	background: #e6f4ec;
 }
 
+.dcl-profile-btn {
+	display: inline-block;
+	padding: 5px 12px;
+	background: #1a3a2a;
+	color: #fff;
+	font-size: 0.78rem;
+	font-weight: 600;
+	border-radius: 4px;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background 0.15s;
+}
+
+.dcl-profile-btn:hover {
+	background: #2e6b4a;
+}
+
 /* ── Batting History Player List ────────────────────────────── */
 .player-list-grid {
 	display: grid;

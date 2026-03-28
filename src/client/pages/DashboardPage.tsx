@@ -174,8 +174,16 @@ export const DashboardPage: React.FC = () => {
 			</div>
 
 			<div className="dashboard-hero">
-				<h2 className="dashboard-hero__title">Dallas Bulls</h2>
-				<p className="dashboard-hero__sub">Cricket Team Statistics</p>
+				<div
+					className="dashboard-hero__banner"
+					style={{ backgroundImage: 'url(./assets/team-banner.jpg)' }}
+				>
+					<div className="dashboard-hero__banner-vignette" />
+					<div className="dashboard-hero__banner-content">
+						<h2 className="dashboard-hero__title">Dallas Bulls</h2>
+						<p className="dashboard-hero__sub">Cricket Team Statistics</p>
+					</div>
+				</div>
 			</div>
 
 			{loading && (

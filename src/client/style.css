@@ -468,6 +468,107 @@
 	font-size: 0.875rem;
 }
 
+/* ── Batting Summary Form Banner ───────────────────────────── */
+.batting-form-banner {
+	margin: 0 0 1rem;
+	border-radius: 10px;
+	padding: 0.95rem;
+	background: linear-gradient(135deg, #1a3a2a 0%, #27573f 100%);
+	border: 1px solid rgba(69, 143, 101, 0.35);
+	box-shadow: 0 8px 20px rgba(10, 36, 25, 0.2);
+	color: #ffffff;
+}
+
+.batting-form-banner--state {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+	font-size: 0.9rem;
+}
+
+.batting-form-banner--error {
+	background: #fff0ee;
+	color: #9c2f23;
+	border-color: #f1b5af;
+}
+
+.batting-form-banner__head {
+	margin-bottom: 0.85rem;
+}
+
+.batting-form-banner__title {
+	margin: 0;
+	font-family: 'Racing Sans One', sans-serif;
+	font-size: 1.2rem;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
+}
+
+.batting-form-banner__sub {
+	margin: 0.25rem 0 0;
+	font-size: 0.8rem;
+	color: rgba(255, 255, 255, 0.82);
+}
+
+.batting-form-banner__grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.6rem;
+}
+
+.batting-form-banner__card {
+	border-radius: 8px;
+	padding: 0.65rem 0.7rem;
+	background: rgba(255, 255, 255, 0.12);
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	min-height: 88px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 0.2rem;
+}
+
+.batting-form-banner__metric {
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.35px;
+	text-transform: uppercase;
+	color: rgba(255, 255, 255, 0.74);
+}
+
+.batting-form-banner__player {
+	font-size: 0.88rem;
+	font-weight: 700;
+	line-height: 1.2;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.batting-form-banner__value {
+	font-size: 1.1rem;
+	font-weight: 700;
+	line-height: 1.15;
+	color: #d7f7e5;
+}
+
+.batting-form-banner__empty {
+	font-size: 0.8rem;
+	color: rgba(255, 255, 255, 0.82);
+}
+
+@media (max-width: 1024px) {
+	.batting-form-banner__grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 600px) {
+	.batting-form-banner__grid {
+		grid-template-columns: 1fr;
+	}
+}
+
 /* ── States ─────────────────────────────────────────────────── */
 .page__state {
 	display: flex;

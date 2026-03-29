@@ -7,11 +7,12 @@ interface SheetPageProps {
 	description?: string;
 	defaultSortKey?: string;
 	defaultSortDir?: SortDir;
+	banner?: React.ReactNode;
 }
 
 type SortDir = 'asc' | 'desc';
 
-export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, description, defaultSortKey, defaultSortDir }) => {
+export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, description, defaultSortKey, defaultSortDir, banner }) => {
 	const [rows, setRows] = useState<SheetRow[]>([]);
 	const [headers, setHeaders] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
@@ -76,6 +77,8 @@ export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, descript
 				<h2 className="page__title">{title}</h2>
 				{description && <p className="page__description">{description}</p>}
 			</div>
+
+			{banner}
 
 			{loading && (
 				<div className="page__state">

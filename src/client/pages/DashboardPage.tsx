@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchSheetData, SheetRow } from '../sheetsApi';
 
+const APP_VERSION = __APP_VERSION__;
+
 interface ChartRow {
 	name: string;
 	value: number;
@@ -238,32 +240,38 @@ export const DashboardPage: React.FC = () => {
 			{error && <div className="page__state page__state--error">{error}</div>}
 
 			{!loading && !error && (
-				<div className="dashboard-grid">
-					<ChartCard
-						title="Top 5 Wicket Takers (min 10 matches)"
-						accentClass="dashboard-bars__fill--wickets"
-						valueFormatter={value => value.toFixed(0)}
-						rows={charts.topWickets}
-					/>
-					<ChartCard
-						title="Top 5 Strike Rate (min 10 matches)"
-						accentClass="dashboard-bars__fill--strike-rate"
-						valueFormatter={value => value.toFixed(2)}
-						rows={charts.topStrikeRate}
-					/>
-					<ChartCard
-						title="Top 5 Run Getters (min 10 matches)"
-						accentClass="dashboard-bars__fill--runs"
-						valueFormatter={value => value.toFixed(0)}
-						rows={charts.topRuns}
-					/>
-					<ChartCard
-						title="Top 5 Economy Bowlers (min 10 matches & 10 overs bowled)"
-						accentClass="dashboard-bars__fill--economy"
-						valueFormatter={value => value.toFixed(2)}
-						rows={charts.topEconomy}
-					/>
-				</div>
+				<>
+					<div className="dashboard-grid">
+						<ChartCard
+							title="Top 5 Wicket Takers (min 10 matches)"
+							accentClass="dashboard-bars__fill--wickets"
+							valueFormatter={value => value.toFixed(0)}
+							rows={charts.topWickets}
+						/>
+						<ChartCard
+							title="Top 5 Strike Rate (min 10 matches)"
+							accentClass="dashboard-bars__fill--strike-rate"
+							valueFormatter={value => value.toFixed(2)}
+							rows={charts.topStrikeRate}
+						/>
+						<ChartCard
+							title="Top 5 Run Getters (min 10 matches)"
+							accentClass="dashboard-bars__fill--runs"
+							valueFormatter={value => value.toFixed(0)}
+							rows={charts.topRuns}
+						/>
+						<ChartCard
+							title="Top 5 Economy Bowlers (min 10 matches & 10 overs bowled)"
+							accentClass="dashboard-bars__fill--economy"
+							valueFormatter={value => value.toFixed(2)}
+							rows={charts.topEconomy}
+						/>
+					</div>
+					<footer className="dashboard-footer" aria-label="Application information">
+						<span className="dashboard-footer__item">Version: {APP_VERSION}</span>
+						<span className="dashboard-footer__item">Managed by: AJ Labs</span>
+					</footer>
+				</>
 			)}
 		</div>
 	);

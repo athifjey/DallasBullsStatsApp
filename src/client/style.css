@@ -443,6 +443,36 @@
 	}
 }
 
+.dashboard-footer {
+	position: relative;
+	z-index: 1;
+	margin-top: 1rem;
+	padding: 0.75rem 0.9rem;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.75rem;
+	border-radius: 10px;
+	background: rgba(10, 28, 18, 0.68);
+	border: 1px solid rgba(100, 180, 130, 0.2);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+}
+
+.dashboard-footer__item {
+	font-size: 0.82rem;
+	font-weight: 600;
+	color: #c8e8d4;
+	letter-spacing: 0.2px;
+}
+
+@media (max-width: 700px) {
+	.dashboard-footer {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}
+
 /* ── Page ───────────────────────────────────────────────────── */
 .page {
 	max-width: 100%;

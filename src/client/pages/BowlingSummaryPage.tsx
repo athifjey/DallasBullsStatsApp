@@ -170,7 +170,7 @@ const computeRecentFormLeaders = (rows: SheetRow[]): BowlingRecentFormLeaders | 
 	}
 
 	const cutoff = new Date();
-	cutoff.setMonth(cutoff.getMonth() - 6);
+	cutoff.setFullYear(cutoff.getFullYear() - 1);
 
 	const grouped = new Map<string, SheetRow[]>();
 	for (const row of rows) {
@@ -206,8 +206,8 @@ const computeRecentFormLeaders = (rows: SheetRow[]): BowlingRecentFormLeaders | 
 		const wickets = lastFive.reduce((sum, row) => sum + parseNum(row[wicketsKey]), 0);
 		const maidens = maidensKey ? lastFive.reduce((sum, row) => sum + parseNum(row[maidensKey]), 0) : 0;
 		const dots = dotsKey ? lastFive.reduce((sum, row) => sum + parseNum(row[dotsKey]), 0) : 0;
-		const totalRunsConceded = runsKey ? lastFive.reduce((sum, row) => sum + parseNum(row[runsKey]), 0) : null;
 		const totalOvers = oversKey ? lastFive.reduce((sum, row) => sum + parseOversToFloat(row[oversKey]), 0) : null;
+		const totalRunsConceded = runsKey ? lastFive.reduce((sum, row) => sum + parseNum(row[runsKey]), 0) : null;
 		const economy = totalRunsConceded !== null && totalOvers !== null && totalOvers > 0
 			? totalRunsConceded / totalOvers
 			: null;
@@ -308,7 +308,7 @@ const BowlingRecentFormBanner: React.FC = () => {
 	if (!leaders || leaders.eligiblePlayers === 0) {
 		return (
 			<section className="batting-form-banner batting-form-banner--state">
-				No recent bowling-form leaders available. Requires players active in last 6 months with at least 5 matches.
+				No recent bowling-form leaders available. Requires players active in last 1 year with at least 5 matches.
 			</section>
 		);
 	}
@@ -350,7 +350,7 @@ const BowlingRecentFormBanner: React.FC = () => {
 		<section className="batting-form-banner">
 			<div className="batting-form-banner__head">
 				<h3 className="batting-form-banner__title">Recent Bowling Form Leaders</h3>
-				<p className="batting-form-banner__sub">From Bowling History: last 5 matches per player, eligible players active in last 6 months with 5+ matches.</p>
+				<p className="batting-form-banner__sub">From Bowling History: aggregated totals from last 5 matches per player, best across all eligible players active in last 1 year with 5+ matches.</p>
 			</div>
 			<div className="batting-form-banner__grid">
 				{cards.map(card => (

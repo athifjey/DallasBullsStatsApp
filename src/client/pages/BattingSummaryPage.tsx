@@ -106,7 +106,7 @@ const computeRecentFormLeaders = (rows: SheetRow[]): RecentFormLeaders | null =>
 	}
 
 	const cutoff = new Date();
-	cutoff.setMonth(cutoff.getMonth() - 6);
+	cutoff.setFullYear(cutoff.getFullYear() - 1);
 
 	const grouped = new Map<string, SheetRow[]>();
 
@@ -226,7 +226,7 @@ const RecentFormBanner: React.FC = () => {
 	if (!leaders || leaders.eligiblePlayers === 0) {
 		return (
 			<section className="batting-form-banner batting-form-banner--state">
-				No recent-form leaders available. Requires players active in last 6 months with at least 5 matches.
+				No recent-form leaders available. Requires players active in last 1 year with at least 5 matches.
 			</section>
 		);
 	}
@@ -244,7 +244,7 @@ const RecentFormBanner: React.FC = () => {
 		<section className="batting-form-banner">
 			<div className="batting-form-banner__head">
 				<h3 className="batting-form-banner__title">Recent Form Leaders</h3>
-				<p className="batting-form-banner__sub">From Batting History: last 5 matches per player, eligible players active in last 6 months with 5+ matches.</p>
+				<p className="batting-form-banner__sub">From Batting History: aggregated totals from last 5 matches per player, best across all eligible players active in last 1 year with 5+ matches.</p>
 			</div>
 			<div className="batting-form-banner__grid">
 				{cards.map(card => (

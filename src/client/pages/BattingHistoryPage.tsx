@@ -40,7 +40,7 @@ interface RecentPerf {
 }
 
 const computeRecentPerf = (rows: SheetRow[]): RecentPerf | null => {
-	const last5 = rows.slice(-5);
+	const last5 = rows.slice(0, 5);
 	if (!last5.length) return null;
 
 	const headers = Object.keys(last5[0]);

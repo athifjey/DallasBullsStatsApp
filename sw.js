@@ -1,8 +1,9 @@
-const CACHE = 'dallas-bulls-v1';
+const APP_VERSION = '__APP_VERSION__';
+const CACHE = `dallas-bulls-${APP_VERSION}`;
 const PRECACHE = [
   './',
   './index.html',
-  './browser.js',
+  './manifest.json',
   './assets/logo.png',
   './assets/team-banner.jpg',
 ];
@@ -12,6 +13,12 @@ self.addEventListener('install', event => {
     caches.open(CACHE).then(cache => cache.addAll(PRECACHE))
   );
   self.skipWaiting();
+});
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', event => {
@@ -24,25 +31,53 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Only handle GET requests for same-origin or assets
-  if (event.request.method !== 'GET') return;
+  if (event.request.method !== 'GET') {
+    return;
+  }
 
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        // Cache successful same-origin responses
-        if (
-          response.ok &&
-          (event.request.url.startsWith(self.location.origin) ||
-            event.request.url.includes('fonts.googleapis.com') ||
-            event.request.url.includes('fonts.gstatic.com'))
-        ) {
-          const clone = response.clone();
-          caches.open(CACHE).then(cache => cache.put(event.request, clone));
+  const requestUrl = new URL(event.request.url);
+
+  // Let non-same-origin traffic bypass this worker.
+  if (requestUrl.origin !== self.location.origin) {
+    return;
+  }
+
+  // Keep HTML and JS fresh on every reload using network-first.
+  const isDocument = event.request.mode === 'navigate' || event.request.destination === 'document';
+  const isScript = event.request.destination === 'script';
+
+  if (isDocument || isScript) {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(event.request, { cache: 'no-store' });
+        if (response.ok) {
+          const cache = await caches.open(CACHE);
+          await cache.put(event.request, response.clone());
         }
         return response;
-      }).catch(() => cached || new Response('Offline', { status: 503 }));
-    })
-  );
+      } catch {
+        const cached = await caches.match(event.request);
+        if (cached) {
+          return cached;
+        }
+        return new Response('Offline', { status: 503 });
+      }
+    })());
+    return;
+  }
+
+  // Cache-first for static assets (images/icons/etc.).
+  event.respondWith((async () => {
+    const cached = await caches.match(event.request);
+    if (cached) {
+      return cached;
+    }
+
+    const response = await fetch(event.request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE);
+      await cache.put(event.request, response.clone());
+    }
+    return response;
+  })());
 });

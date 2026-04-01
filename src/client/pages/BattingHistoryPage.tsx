@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchSheetData, SheetRow } from '../sheetsApi';
+import { calculateBattingPoints, resolveBattingPointColumnKeys } from '../pointsService';
+
+const BATTING_POINTS_HEADER = 'Batting Points';
 
 const resolvePlayerNameKey = (rows: SheetRow[]): string | null => {
 	if (!rows.length) {
@@ -148,6 +151,28 @@ export const BattingHistoryPage: React.FC = () => {
 		return Object.keys(selectedPlayerRows[0]).filter(h => h !== playerNameKey);
 	}, [selectedPlayerRows, playerNameKey]);
 
+	const battingPointKeys = useMemo(() => {
+		if (!selectedPlayerRows.length) {
+			return null;
+		}
+		return resolveBattingPointColumnKeys(Object.keys(selectedPlayerRows[0]));
+	}, [selectedPlayerRows]);
+
+	const battingPointSummary = useMemo(() => {
+		if (!battingPointKeys) {
+			return { last5Points: 0, totalPoints: 0 };
+		}
+
+		const last5Points = selectedPlayerRows
+			.slice(0, 5)
+			.reduce((sum, row) => sum + calculateBattingPoints(row, battingPointKeys), 0);
+
+		const totalPoints = selectedPlayerRows
+			.reduce((sum, row) => sum + calculateBattingPoints(row, battingPointKeys), 0);
+
+		return { last5Points, totalPoints };
+	}, [selectedPlayerRows, battingPointKeys]);
+
 	const recentPerf = useMemo(() => computeRecentPerf(selectedPlayerRows), [selectedPlayerRows]);
 
 	const filteredPlayers = useMemo(() => {
@@ -275,6 +300,14 @@ export const BattingHistoryPage: React.FC = () => {
 											<span className="recent-perf-stat__lbl">Average</span>
 										</div>
 									)}
+									<div className="recent-perf-stat recent-perf-stat--points recent-perf-stat--points-last">
+										<span className="recent-perf-stat__val">{battingPointSummary.last5Points}</span>
+										<span className="recent-perf-stat__lbl">Points (Last 5)</span>
+									</div>
+									<div className="recent-perf-stat recent-perf-stat--points recent-perf-stat--points-total">
+										<span className="recent-perf-stat__val">{battingPointSummary.totalPoints}</span>
+										<span className="recent-perf-stat__lbl">Total Points</span>
+									</div>
 								</div>
 							</div>
 						)}
@@ -286,6 +319,7 @@ export const BattingHistoryPage: React.FC = () => {
 										{modalHeaders.map(header => (
 											<th key={header}>{header}</th>
 										))}
+										<th>{BATTING_POINTS_HEADER}</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -294,6 +328,7 @@ export const BattingHistoryPage: React.FC = () => {
 											{modalHeaders.map(header => (
 												<td key={header}>{row[header]}</td>
 											))}
+											<td className="batting-points-cell">{battingPointKeys ? calculateBattingPoints(row, battingPointKeys) : 0}</td>
 										</tr>
 									))}
 								</tbody>

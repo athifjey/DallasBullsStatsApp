@@ -1,5 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchSheetData, SheetRow } from '../sheetsApi';
+import {
+	calculateBattingPoints,
+	calculateBowlingPoints,
+	resolveBattingPointColumnKeys,
+	resolveBowlingPointColumnKeys,
+} from '../pointsService';
 
 const APP_VERSION = __APP_VERSION__;
 
@@ -115,6 +121,37 @@ const topEconomyBowlers = (
 	return parsedRows.slice(0, limit);
 };
 
+const topPointLeaders = (
+	rows: SheetRow[],
+	pointCalculator: (row: SheetRow) => number,
+	limit = 5
+): ChartRow[] => {
+	if (!rows.length) {
+		return [];
+	}
+
+	const playerKey = findPlayerNameKey(rows[0]);
+	if (!playerKey) {
+		return [];
+	}
+
+	const pointsByPlayer = new Map<string, number>();
+	for (const row of rows) {
+		const playerName = (row[playerKey] ?? '').trim();
+		if (!playerName) {
+			continue;
+		}
+
+		const existing = pointsByPlayer.get(playerName) ?? 0;
+		pointsByPlayer.set(playerName, existing + pointCalculator(row));
+	}
+
+	return [...pointsByPlayer.entries()]
+		.map(([name, value]) => ({ name, value }))
+		.sort((a, b) => b.value - a.value)
+		.slice(0, limit);
+};
+
 const ChartCard: React.FC<ChartConfig> = ({ title, accentClass, valueFormatter, rows }) => {
 	const maxValue = rows.length ? Math.max(...rows.map(row => row.value)) : 0;
 
@@ -152,16 +189,25 @@ export const DashboardPage: React.FC = () => {
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const [battingRows, setBattingRows] = useState<SheetRow[]>([]);
 	const [bowlingRows, setBowlingRows] = useState<SheetRow[]>([]);
+	const [battingHistoryRows, setBattingHistoryRows] = useState<SheetRow[]>([]);
+	const [bowlingHistoryRows, setBowlingHistoryRows] = useState<SheetRow[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		setLoading(true);
 		setError(null);
-		Promise.all([fetchSheetData('Batting Summary'), fetchSheetData('Bowling Summary')])
-			.then(([battingData, bowlingData]) => {
+		Promise.all([
+			fetchSheetData('Batting Summary'),
+			fetchSheetData('Bowling Summary'),
+			fetchSheetData('Batting History'),
+			fetchSheetData('Bowling History'),
+		])
+			.then(([battingData, bowlingData, battingHistoryData, bowlingHistoryData]) => {
 				setBattingRows(battingData);
 				setBowlingRows(bowlingData);
+				setBattingHistoryRows(battingHistoryData);
+				setBowlingHistoryRows(bowlingHistoryData);
 				setLoading(false);
 			})
 			.catch((err: Error) => {
@@ -173,6 +219,12 @@ export const DashboardPage: React.FC = () => {
 	const charts = useMemo(() => {
 		const battingPlayerKey = findPlayerNameKey(battingRows[0]);
 		const bowlingPlayerKey = findPlayerNameKey(bowlingRows[0]);
+		const battingPointKeys = battingHistoryRows.length
+			? resolveBattingPointColumnKeys(Object.keys(battingHistoryRows[0]))
+			: null;
+		const bowlingPointKeys = bowlingHistoryRows.length
+			? resolveBowlingPointColumnKeys(Object.keys(bowlingHistoryRows[0]))
+			: null;
 
 		const battingMatchesKey = findColumnKey(battingRows[0], ['Matches', 'Match', 'Mat', 'M']);
 		const bowlingMatchesKey = findColumnKey(bowlingRows[0], ['Matches', 'Match', 'Mat', 'M']);
@@ -197,8 +249,14 @@ export const DashboardPage: React.FC = () => {
 				oversKey,
 				economyKey
 			),
+			topBattingPoints: battingPointKeys
+				? topPointLeaders(battingHistoryRows, row => calculateBattingPoints(row, battingPointKeys))
+				: [],
+			topBowlingPoints: bowlingPointKeys
+				? topPointLeaders(bowlingHistoryRows, row => calculateBowlingPoints(row, bowlingPointKeys))
+				: [],
 		};
-	}, [battingRows, bowlingRows]);
+	}, [battingRows, bowlingRows, battingHistoryRows, bowlingHistoryRows]);
 
 	return (
 		<div className="page dashboard-page">
@@ -268,6 +326,18 @@ export const DashboardPage: React.FC = () => {
 							accentClass="dashboard-bars__fill--economy"
 							valueFormatter={value => value.toFixed(2)}
 							rows={charts.topEconomy}
+						/>
+						<ChartCard
+							title="Top 5 Batting Points (from Batting History)"
+							accentClass="dashboard-bars__fill--runs"
+							valueFormatter={value => value.toFixed(0)}
+							rows={charts.topBattingPoints}
+						/>
+						<ChartCard
+							title="Top 5 Bowling Points (from Bowling History)"
+							accentClass="dashboard-bars__fill--wickets"
+							valueFormatter={value => value.toFixed(0)}
+							rows={charts.topBowlingPoints}
 						/>
 					</div>
 					<footer className="dashboard-footer" aria-label="Application information">

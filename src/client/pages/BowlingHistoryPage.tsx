@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchSheetData, SheetRow } from '../sheetsApi';
+import { calculateBowlingPoints, resolveBowlingPointColumnKeys } from '../pointsService';
+
+const BOWLING_POINTS_HEADER = 'Bowling Points';
 
 const resolvePlayerNameKey = (rows: SheetRow[]): string | null => {
 	if (!rows.length) return null;
@@ -127,6 +130,28 @@ export const BowlingHistoryPage: React.FC = () => {
 		return Object.keys(selectedPlayerRows[0]).filter(h => h !== playerNameKey);
 	}, [selectedPlayerRows, playerNameKey]);
 
+	const bowlingPointKeys = useMemo(() => {
+		if (!selectedPlayerRows.length) {
+			return null;
+		}
+		return resolveBowlingPointColumnKeys(Object.keys(selectedPlayerRows[0]));
+	}, [selectedPlayerRows]);
+
+	const bowlingPointSummary = useMemo(() => {
+		if (!bowlingPointKeys) {
+			return { last5Points: 0, totalPoints: 0 };
+		}
+
+		const last5Points = selectedPlayerRows
+			.slice(0, 5)
+			.reduce((sum, row) => sum + calculateBowlingPoints(row, bowlingPointKeys), 0);
+
+		const totalPoints = selectedPlayerRows
+			.reduce((sum, row) => sum + calculateBowlingPoints(row, bowlingPointKeys), 0);
+
+		return { last5Points, totalPoints };
+	}, [selectedPlayerRows, bowlingPointKeys]);
+
 	const recentPerf = useMemo(() => computeBowlingRecentPerf(selectedPlayerRows), [selectedPlayerRows]);
 
 	const filteredPlayers = useMemo(() => {
@@ -253,6 +278,14 @@ export const BowlingHistoryPage: React.FC = () => {
 											<span className="recent-perf-stat__lbl">Best Figures</span>
 										</div>
 									)}
+									<div className="recent-perf-stat recent-perf-stat--points recent-perf-stat--points-last">
+										<span className="recent-perf-stat__val">{bowlingPointSummary.last5Points}</span>
+										<span className="recent-perf-stat__lbl">Points (Last 5)</span>
+									</div>
+									<div className="recent-perf-stat recent-perf-stat--points recent-perf-stat--points-total">
+										<span className="recent-perf-stat__val">{bowlingPointSummary.totalPoints}</span>
+										<span className="recent-perf-stat__lbl">Total Points</span>
+									</div>
 								</div>
 							</div>
 						)}
@@ -264,6 +297,7 @@ export const BowlingHistoryPage: React.FC = () => {
 										{modalHeaders.map(header => (
 											<th key={header}>{header}</th>
 										))}
+										<th>{BOWLING_POINTS_HEADER}</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -272,6 +306,7 @@ export const BowlingHistoryPage: React.FC = () => {
 											{modalHeaders.map(header => (
 												<td key={header}>{row[header]}</td>
 											))}
+											<td className="batting-points-cell">{bowlingPointKeys ? calculateBowlingPoints(row, bowlingPointKeys) : 0}</td>
 										</tr>
 									))}
 								</tbody>

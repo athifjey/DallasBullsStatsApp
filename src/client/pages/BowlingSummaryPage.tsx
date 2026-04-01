@@ -1,6 +1,62 @@
 import React from 'react';
 import { SheetPage } from '../SheetPage';
 import { fetchSheetData, SheetRow } from '../sheetsApi';
+import { calculateBowlingPoints, resolveBowlingPointColumnKeys } from '../pointsService';
+
+const TOTAL_POINTS_HEADER = 'Total Points';
+
+const findPlayerNameKeyFromRow = (row: SheetRow | undefined): string | null => {
+	if (!row) {
+		return null;
+	}
+
+	const keys = Object.keys(row);
+	const exact = keys.find(key => key.trim().toLowerCase() === 'player name');
+	if (exact) {
+		return exact;
+	}
+
+	return keys.find(key => key.trim().toLowerCase().includes('player')) ?? null;
+};
+
+const enrichBowlingSummaryWithPoints = async (summaryRows: SheetRow[]): Promise<SheetRow[]> => {
+	if (!summaryRows.length) {
+		return summaryRows;
+	}
+
+	const summaryPlayerKey = findPlayerNameKeyFromRow(summaryRows[0]);
+	if (!summaryPlayerKey) {
+		return summaryRows;
+	}
+
+	const historyRows = await fetchSheetData('Bowling History');
+	const historyPlayerKey = findPlayerNameKeyFromRow(historyRows[0]);
+	if (!historyRows.length || !historyPlayerKey) {
+		return summaryRows.map(row => ({ ...row, [TOTAL_POINTS_HEADER]: '0' }));
+	}
+
+	const pointKeys = resolveBowlingPointColumnKeys(Object.keys(historyRows[0]));
+	const pointsByPlayer = new Map<string, number>();
+
+	for (const row of historyRows) {
+		const player = (row[historyPlayerKey] ?? '').trim();
+		if (!player) {
+			continue;
+		}
+
+		const current = pointsByPlayer.get(player) ?? 0;
+		pointsByPlayer.set(player, current + calculateBowlingPoints(row, pointKeys));
+	}
+
+	return summaryRows.map(row => {
+		const player = (row[summaryPlayerKey] ?? '').trim();
+		const totalPoints = player ? pointsByPlayer.get(player) ?? 0 : 0;
+		return {
+			...row,
+			[TOTAL_POINTS_HEADER]: totalPoints.toString(),
+		};
+	});
+};
 
 interface Leader {
 	player: string;
@@ -378,6 +434,7 @@ export const BowlingSummaryPage: React.FC = () => (
 		description="Overall bowling statistics for all players."
 		defaultSortKey="Wickets"
 		defaultSortDir="desc"
+		transformRows={enrichBowlingSummaryWithPoints}
 		banner={<BowlingRecentFormBanner />}
 	/>
 );

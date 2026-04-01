@@ -1,5 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchSheetData, SheetRow } from '../sheetsApi';
+import {
+	calculateBattingPoints,
+	calculateBowlingPoints,
+	resolveBattingPointColumnKeys,
+	resolveBowlingPointColumnKeys,
+} from '../pointsService';
 
 type Outcome = 'Win' | 'Loss' | 'Tie' | 'No Result';
 type OutcomeFilter = 'All' | Outcome;
@@ -18,6 +24,11 @@ interface TeamStatsMatch {
 	message: string;
 	outcome: Outcome;
 	venue: Venue;
+}
+
+interface PointsLeader {
+	player: string;
+	points: number;
 }
 
 interface RecordBreakdown {
@@ -43,6 +54,53 @@ const isDallasBulls = (value: string | undefined): boolean => normalizeText(valu
 const parseDateValue = (value: string): number => {
 	const timestamp = new Date(value).getTime();
 	return Number.isNaN(timestamp) ? 0 : timestamp;
+};
+
+const normalizeDateKey = (value: string | undefined): string | null => {
+	if (!value) {
+		return null;
+	}
+
+	const timestamp = parseDateValue(value);
+	if (!timestamp) {
+		return null;
+	}
+
+	return new Date(timestamp).toISOString().slice(0, 10);
+};
+
+const findPlayerNameKeyFromRow = (row: SheetRow | undefined): string | null => {
+	if (!row) {
+		return null;
+	}
+
+	const keys = Object.keys(row);
+	const exact = keys.find(key => key.trim().toLowerCase() === 'player name');
+	if (exact) {
+		return exact;
+	}
+
+	return keys.find(key => key.trim().toLowerCase().includes('player')) ?? null;
+};
+
+const findDateKeyFromRow = (row: SheetRow | undefined): string | null => {
+	if (!row) {
+		return null;
+	}
+
+	return Object.keys(row).find(key => /date/i.test(key.trim())) ?? null;
+};
+
+const topLeaderFromMap = (pointsByPlayer: Map<string, number>): PointsLeader | null => {
+	let leader: PointsLeader | null = null;
+
+	for (const [player, points] of pointsByPlayer.entries()) {
+		if (!leader || points > leader.points) {
+			leader = { player, points };
+		}
+	}
+
+	return leader;
 };
 
 const formatDate = (value: string): string => {
@@ -235,6 +293,8 @@ const OutcomeBadge: React.FC<{ outcome: Outcome }> = ({ outcome }) => (
 
 export const TeamStatsPage: React.FC = () => {
 	const [rows, setRows] = useState<SheetRow[]>([]);
+	const [battingHistoryRows, setBattingHistoryRows] = useState<SheetRow[]>([]);
+	const [bowlingHistoryRows, setBowlingHistoryRows] = useState<SheetRow[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [activePerformanceView, setActivePerformanceView] = useState<PerformanceView>('opponents');
@@ -246,9 +306,15 @@ export const TeamStatsPage: React.FC = () => {
 	useEffect(() => {
 		setLoading(true);
 		setError(null);
-		fetchSheetData('Team stats')
-			.then(data => {
-				setRows(data);
+		Promise.all([
+			fetchSheetData('Team stats'),
+			fetchSheetData('Batting History'),
+			fetchSheetData('Bowling History'),
+		])
+			.then(([teamStatsData, battingHistoryData, bowlingHistoryData]) => {
+				setRows(teamStatsData);
+				setBattingHistoryRows(battingHistoryData);
+				setBowlingHistoryRows(bowlingHistoryData);
 				setLoading(false);
 			})
 			.catch((err: Error) => {
@@ -274,6 +340,71 @@ export const TeamStatsPage: React.FC = () => {
 		const topOpponent = opponentGroups[0] ?? null;
 		const topGround = groundGroups[0] ?? null;
 		const latestMatch = matches[0] ?? null;
+		const latestMatchContext = latestMatch
+			? `${formatDate(latestMatch.date)} vs ${latestMatch.opponent}`
+			: null;
+
+		let latestMatchTopBatsman: PointsLeader | null = null;
+		let latestMatchTopBowler: PointsLeader | null = null;
+		let latestMatchTopAllRounder: PointsLeader | null = null;
+
+		const latestMatchDateKey = normalizeDateKey(latestMatch?.date);
+		if (latestMatchDateKey) {
+			const battingPlayerKey = findPlayerNameKeyFromRow(battingHistoryRows[0]);
+			const battingDateKey = findDateKeyFromRow(battingHistoryRows[0]);
+			const bowlingPlayerKey = findPlayerNameKeyFromRow(bowlingHistoryRows[0]);
+			const bowlingDateKey = findDateKeyFromRow(bowlingHistoryRows[0]);
+
+			const battingPointsByPlayer = new Map<string, number>();
+			const bowlingPointsByPlayer = new Map<string, number>();
+
+			if (battingPlayerKey && battingDateKey && battingHistoryRows.length) {
+				const battingPointKeys = resolveBattingPointColumnKeys(Object.keys(battingHistoryRows[0]));
+				for (const row of battingHistoryRows) {
+					if (normalizeDateKey(row[battingDateKey]) !== latestMatchDateKey) {
+						continue;
+					}
+
+					const player = (row[battingPlayerKey] ?? '').trim();
+					if (!player) {
+						continue;
+					}
+
+					const current = battingPointsByPlayer.get(player) ?? 0;
+					battingPointsByPlayer.set(player, current + calculateBattingPoints(row, battingPointKeys));
+				}
+			}
+
+			if (bowlingPlayerKey && bowlingDateKey && bowlingHistoryRows.length) {
+				const bowlingPointKeys = resolveBowlingPointColumnKeys(Object.keys(bowlingHistoryRows[0]));
+				for (const row of bowlingHistoryRows) {
+					if (normalizeDateKey(row[bowlingDateKey]) !== latestMatchDateKey) {
+						continue;
+					}
+
+					const player = (row[bowlingPlayerKey] ?? '').trim();
+					if (!player) {
+						continue;
+					}
+
+					const current = bowlingPointsByPlayer.get(player) ?? 0;
+					bowlingPointsByPlayer.set(player, current + calculateBowlingPoints(row, bowlingPointKeys));
+				}
+			}
+
+			latestMatchTopBatsman = topLeaderFromMap(battingPointsByPlayer);
+			latestMatchTopBowler = topLeaderFromMap(bowlingPointsByPlayer);
+
+			const aggregateByPlayer = new Map<string, number>();
+			for (const [player, points] of battingPointsByPlayer.entries()) {
+				aggregateByPlayer.set(player, points);
+			}
+			for (const [player, points] of bowlingPointsByPlayer.entries()) {
+				aggregateByPlayer.set(player, (aggregateByPlayer.get(player) ?? 0) + points);
+			}
+
+			latestMatchTopAllRounder = topLeaderFromMap(aggregateByPlayer);
+		}
 
 		return {
 			totalFixtures: matches.length,
@@ -286,8 +417,12 @@ export const TeamStatsPage: React.FC = () => {
 			topOpponent,
 			topGround,
 			latestMatch,
+			latestMatchContext,
+			latestMatchTopBatsman,
+			latestMatchTopBowler,
+			latestMatchTopAllRounder,
 		};
-	}, [matches]);
+	}, [matches, battingHistoryRows, bowlingHistoryRows]);
 
 	const filteredMatches = useMemo(() => {
 		const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -417,6 +552,33 @@ export const TeamStatsPage: React.FC = () => {
 							</p>
 							<p className="team-stats-insight__meta">
 								{summary.latestMatch ? `${formatDate(summary.latestMatch.date)} at ${summary.latestMatch.ground}` : 'No latest result available'}
+							</p>
+						</article>
+						<article className="team-stats-insight">
+							<h3 className="team-stats-insight__title">Recent Match Top Batsman</h3>
+							<p className="team-stats-insight__value">{summary.latestMatchTopBatsman?.player ?? 'N/A'}</p>
+							<p className="team-stats-insight__meta">
+								{summary.latestMatchTopBatsman
+									? `${summary.latestMatchTopBatsman.points} pts • ${summary.latestMatchContext ?? 'Latest match'}`
+									: `No batting points found for ${summary.latestMatchContext ?? 'latest match'}`}
+							</p>
+						</article>
+						<article className="team-stats-insight">
+							<h3 className="team-stats-insight__title">Recent Match Top Bowler</h3>
+							<p className="team-stats-insight__value">{summary.latestMatchTopBowler?.player ?? 'N/A'}</p>
+							<p className="team-stats-insight__meta">
+								{summary.latestMatchTopBowler
+									? `${summary.latestMatchTopBowler.points} pts • ${summary.latestMatchContext ?? 'Latest match'}`
+									: `No bowling points found for ${summary.latestMatchContext ?? 'latest match'}`}
+							</p>
+						</article>
+						<article className="team-stats-insight">
+							<h3 className="team-stats-insight__title">Recent Match Top Aggregate</h3>
+							<p className="team-stats-insight__value">{summary.latestMatchTopAllRounder?.player ?? 'N/A'}</p>
+							<p className="team-stats-insight__meta">
+								{summary.latestMatchTopAllRounder
+									? `${summary.latestMatchTopAllRounder.points} pts (batting + bowling) • ${summary.latestMatchContext ?? 'Latest match'}`
+									: `No aggregate points found for ${summary.latestMatchContext ?? 'latest match'}`}
 							</p>
 						</article>
 					</section>

@@ -8,11 +8,12 @@ interface SheetPageProps {
 	defaultSortKey?: string;
 	defaultSortDir?: SortDir;
 	banner?: React.ReactNode;
+	transformRows?: (rows: SheetRow[]) => Promise<SheetRow[]> | SheetRow[];
 }
 
 type SortDir = 'asc' | 'desc';
 
-export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, description, defaultSortKey, defaultSortDir, banner }) => {
+export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, description, defaultSortKey, defaultSortDir, banner, transformRows }) => {
 	const [rows, setRows] = useState<SheetRow[]>([]);
 	const [headers, setHeaders] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
@@ -26,9 +27,10 @@ export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, descript
 		setSortKey(null);
 		setSortDir('asc');
 		fetchSheetData(sheetName)
-			.then(data => {
-				setRows(data);
-				const cols = data.length > 0 ? Object.keys(data[0]) : [];
+			.then(async data => {
+				const nextRows = transformRows ? await transformRows(data) : data;
+				setRows(nextRows);
+				const cols = nextRows.length > 0 ? Object.keys(nextRows[0]) : [];
 				setHeaders(cols);
 				if (defaultSortKey) {
 					const match = cols.find(c => c.toLowerCase().includes(defaultSortKey.toLowerCase()));
@@ -43,7 +45,7 @@ export const SheetPage: React.FC<SheetPageProps> = ({ sheetName, title, descript
 				setError(err.message);
 				setLoading(false);
 			});
-	}, [sheetName]);
+	}, [sheetName, defaultSortDir, defaultSortKey, transformRows]);
 
 	const handleSort = (col: string) => {
 		if (sortKey === col) {

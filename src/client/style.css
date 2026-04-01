@@ -1265,6 +1265,11 @@
 	background: #e6f4ec;
 }
 
+.batting-points-cell {
+	font-weight: 700;
+	color: #1a3a2a;
+}
+
 .dcl-profile-btn {
 	display: inline-block;
 	padding: 5px 12px;
@@ -1426,7 +1431,7 @@
 
 .recent-perf-stats {
 	display: grid;
-	grid-template-columns: repeat(6, 1fr);
+	grid-template-columns: repeat(6, minmax(0, 1fr));
 	gap: 0.5rem;
 }
 
@@ -1440,6 +1445,7 @@
 	border-radius: 7px;
 	padding: 0.6rem 0.4rem;
 	min-width: 0;
+	grid-column: span 2;
 }
 
 .recent-perf-stat__val {
@@ -1460,14 +1466,45 @@
 	white-space: nowrap;
 }
 
+.recent-perf-stat--points {
+	align-items: center;
+	padding: 0.6rem 0.4rem;
+	text-align: center;
+	grid-column: span 3;
+}
+
+.recent-perf-stat--points .recent-perf-stat__lbl {
+	text-align: center;
+	white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+	.recent-perf-stats {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.recent-perf-stat {
+		grid-column: span 2;
+	}
+
+	.recent-perf-stat--points {
+		grid-column: span 2;
+	}
+}
+
 @media (max-width: 600px) {
 	.recent-perf-stats {
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: 1fr;
+	}
+
+	.recent-perf-stat,
+	.recent-perf-stat--points {
+		grid-column: span 1;
 	}
 }
 
 @media (max-width: 360px) {
 	.recent-perf-stats {
-		grid-template-columns: repeat(2, 1fr);
+		grid-template-columns: 1fr;
 	}
 }

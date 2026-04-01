@@ -51,7 +51,28 @@ const normalizeText = (value: string | undefined): string => (value ?? '').trim(
 
 const isDallasBulls = (value: string | undefined): boolean => normalizeText(value) === normalizeText(TEAM_NAME);
 
+const ISO_DATE_ONLY_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const parseIsoDateOnlyParts = (value: string | undefined): { year: number; month: number; day: number } | null => {
+	const match = (value ?? '').trim().match(ISO_DATE_ONLY_REGEX);
+	if (!match) {
+		return null;
+	}
+
+	return {
+		year: Number(match[1]),
+		month: Number(match[2]),
+		day: Number(match[3]),
+	};
+};
+
 const parseDateValue = (value: string): number => {
+	const isoParts = parseIsoDateOnlyParts(value);
+	if (isoParts) {
+		// Date-only values from sheets should not shift by local timezone.
+		return Date.UTC(isoParts.year, isoParts.month - 1, isoParts.day);
+	}
+
 	const timestamp = new Date(value).getTime();
 	return Number.isNaN(timestamp) ? 0 : timestamp;
 };
@@ -59,6 +80,11 @@ const parseDateValue = (value: string): number => {
 const normalizeDateKey = (value: string | undefined): string | null => {
 	if (!value) {
 		return null;
+	}
+
+	const isoParts = parseIsoDateOnlyParts(value);
+	if (isoParts) {
+		return `${isoParts.year.toString().padStart(4, '0')}-${isoParts.month.toString().padStart(2, '0')}-${isoParts.day.toString().padStart(2, '0')}`;
 	}
 
 	const timestamp = parseDateValue(value);
@@ -104,6 +130,16 @@ const topLeaderFromMap = (pointsByPlayer: Map<string, number>): PointsLeader | n
 };
 
 const formatDate = (value: string): string => {
+	const isoParts = parseIsoDateOnlyParts(value);
+	if (isoParts) {
+		return new Intl.DateTimeFormat('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric',
+			timeZone: 'UTC',
+		}).format(Date.UTC(isoParts.year, isoParts.month - 1, isoParts.day));
+	}
+
 	const timestamp = parseDateValue(value);
 	if (!timestamp) {
 		return value;

@@ -5,7 +5,7 @@ type Outcome = 'Win' | 'Loss' | 'Tie' | 'No Result';
 type OutcomeFilter = 'All' | Outcome;
 type PerformanceView = 'opponents' | 'grounds';
 type Venue = 'Home' | 'Away' | 'Unknown';
-type SortKey = 'date' | 'opponent' | 'venue' | 'ground' | 'outcome';
+type SortKey = 'date' | 'opponent' | 'ground' | 'outcome';
 type SortDir = 'asc' | 'desc';
 
 interface TeamStatsMatch {
@@ -492,9 +492,6 @@ export const TeamStatsPage: React.FC = () => {
 									<th className={`sortable-th${sortKey === 'opponent' ? ' sort-active' : ''}`} onClick={() => handleSort('opponent')}>
 										Opponent<span className="sort-arrow">{renderSortArrow('opponent')}</span>
 									</th>
-									<th className={`sortable-th${sortKey === 'venue' ? ' sort-active' : ''}`} onClick={() => handleSort('venue')}>
-										Venue<span className="sort-arrow">{renderSortArrow('venue')}</span>
-									</th>
 									<th className={`sortable-th${sortKey === 'ground' ? ' sort-active' : ''}`} onClick={() => handleSort('ground')}>
 										Ground<span className="sort-arrow">{renderSortArrow('ground')}</span>
 									</th>
@@ -510,7 +507,6 @@ export const TeamStatsPage: React.FC = () => {
 									<tr key={`${match.date}-${match.ground}-${match.opponent}-${index}`} className={index % 2 === 0 ? 'row-even' : 'row-odd'}>
 										<td>{formatDate(match.date)}</td>
 										<td>{match.opponent || 'Unknown opponent'}</td>
-										<td>{match.venue}</td>
 										<td>{match.ground || 'Unknown ground'}</td>
 										<td><OutcomeBadge outcome={match.outcome} /></td>
 										<td>{match.winnerResult || 'Not recorded'}</td>
@@ -519,7 +515,7 @@ export const TeamStatsPage: React.FC = () => {
 								))}
 								{sortedMatches.length === 0 && (
 									<tr>
-										<td colSpan={7} className="team-stats-empty">No fixtures match the current filter.</td>
+										<td colSpan={6} className="team-stats-empty">No fixtures match the current filter.</td>
 									</tr>
 								)}
 							</tbody>

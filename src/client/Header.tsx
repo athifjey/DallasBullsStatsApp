@@ -49,11 +49,18 @@ export const Header: React.FC<HeaderProps> = ({ activePage, onNavigate }) => {
 				<div className="app-header__top-row">
 					<button
 						type="button"
-						className="app-header__menu-btn"
+						className={`app-header__menu-btn${isSideNavOpen ? ' app-header__menu-btn--open' : ''}`}
 						onClick={() => setIsSideNavOpen(true)}
 						aria-label="Open menu"
+						aria-expanded={isSideNavOpen}
+						aria-controls="app-side-nav"
 					>
-						Menu
+						<span className="app-header__hamburger" aria-hidden="true">
+							<span className="app-header__hamburger-line" />
+							<span className="app-header__hamburger-line" />
+							<span className="app-header__hamburger-line" />
+						</span>
+						<span className="app-header__menu-label">Menu</span>
 					</button>
 
 					<div className="app-header__brand">
@@ -87,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({ activePage, onNavigate }) => {
 				/>
 			)}
 
-			<aside className={`app-side-nav${isSideNavOpen ? ' app-side-nav--open' : ''}`}>
+			<aside id="app-side-nav" className={`app-side-nav${isSideNavOpen ? ' app-side-nav--open' : ''}`}>
 				<div className="app-side-nav__header">
 					<span className="app-side-nav__title">Menu</span>
 					<button

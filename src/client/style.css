@@ -124,6 +124,8 @@
 
 .app-header__menu-btn {
 	display: none;
+	align-items: center;
+	gap: 0.45rem;
 	border: 1px solid #3f5f4f;
 	background: #234634;
 	color: #fff;
@@ -131,7 +133,41 @@
 	padding: 0.5rem 0.8rem;
 	font-weight: 700;
 	font-size: 0.82rem;
+	line-height: 1;
 	cursor: pointer;
+}
+
+.app-header__hamburger {
+	display: inline-grid;
+	gap: 3px;
+	width: 14px;
+}
+
+.app-header__hamburger-line {
+	display: block;
+	height: 2px;
+	width: 14px;
+	border-radius: 999px;
+	background: currentColor;
+	transform-origin: center;
+	transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.app-header__menu-btn--open .app-header__hamburger-line:nth-child(1) {
+	transform: translateY(5px) rotate(45deg);
+}
+
+.app-header__menu-btn--open .app-header__hamburger-line:nth-child(2) {
+	opacity: 0;
+	transform: scaleX(0.5);
+}
+
+.app-header__menu-btn--open .app-header__hamburger-line:nth-child(3) {
+	transform: translateY(-5px) rotate(-45deg);
+}
+
+.app-header__menu-label {
+	display: inline-block;
 }
 
 .app-header__menu-spacer {

@@ -9,6 +9,8 @@ import { BattingHistoryPage } from './pages/BattingHistoryPage';
 import { BowlingHistoryPage } from './pages/BowlingHistoryPage';
 
 const VERSION_POLL_MS = 5 * 60 * 1000;
+const LAST_SEEN_BUILD_KEY = 'dallas-bulls:last-seen-build';
+const LAST_NOTIFIED_BUILD_KEY = 'dallas-bulls:last-notified-build';
 
 interface VersionMetadata {
 	appVersion: string;
@@ -57,9 +59,33 @@ const PAGE_MAP: Record<Page, React.FC> = {
 
 export const App: React.FC = () => {
 	const [activePage, setActivePage] = useState<Page>(getPageFromHash);
-	const [knownBuildId, setKnownBuildId] = useState<string | null>(null);
+	const [knownBuildId, setKnownBuildId] = useState<string | null>(() => {
+		if (typeof window === 'undefined') {
+			return null;
+		}
+		return window.localStorage.getItem(LAST_SEEN_BUILD_KEY);
+	});
 	const [availableUpdate, setAvailableUpdate] = useState<VersionMetadata | null>(null);
-	const [notificationSentForBuild, setNotificationSentForBuild] = useState<string | null>(null);
+	const [notificationSentForBuild, setNotificationSentForBuild] = useState<string | null>(() => {
+		if (typeof window === 'undefined') {
+			return null;
+		}
+		return window.localStorage.getItem(LAST_NOTIFIED_BUILD_KEY);
+	});
+
+	const persistKnownBuildId = (buildId: string) => {
+		setKnownBuildId(buildId);
+		if (typeof window !== 'undefined') {
+			window.localStorage.setItem(LAST_SEEN_BUILD_KEY, buildId);
+		}
+	};
+
+	const persistNotifiedBuildId = (buildId: string) => {
+		setNotificationSentForBuild(buildId);
+		if (typeof window !== 'undefined') {
+			window.localStorage.setItem(LAST_NOTIFIED_BUILD_KEY, buildId);
+		}
+	};
 
 	const parseVersionMetadata = (value: unknown): VersionMetadata | null => {
 		if (!value || typeof value !== 'object') {
@@ -110,13 +136,13 @@ export const App: React.FC = () => {
 						tag: `update-${metadata.buildId}`,
 						renotify: false,
 					});
-					setNotificationSentForBuild(metadata.buildId);
+					persistNotifiedBuildId(metadata.buildId);
 					return;
 				}
 			}
 
 			new Notification(title, { body, icon: './assets/logo.png' });
-			setNotificationSentForBuild(metadata.buildId);
+			persistNotifiedBuildId(metadata.buildId);
 		} catch {
 			// Ignore notification errors; banner still informs users.
 		}
@@ -136,7 +162,7 @@ export const App: React.FC = () => {
 			}
 
 			if (!knownBuildId) {
-				setKnownBuildId(metadata.buildId);
+				persistKnownBuildId(metadata.buildId);
 				return;
 			}
 
@@ -204,13 +230,23 @@ export const App: React.FC = () => {
 						</span>
 					</div>
 					<div className="update-banner__actions">
-						<button type="button" className="update-banner__btn" onClick={() => window.location.reload()}>
+						<button
+							type="button"
+							className="update-banner__btn"
+							onClick={() => {
+								persistKnownBuildId(availableUpdate.buildId);
+								window.location.reload();
+							}}
+						>
 							Refresh
 						</button>
 						<button
 							type="button"
 							className="update-banner__btn update-banner__btn--ghost"
-							onClick={() => setAvailableUpdate(null)}
+							onClick={() => {
+								persistKnownBuildId(availableUpdate.buildId);
+								setAvailableUpdate(null);
+							}}
 						>
 							Dismiss
 						</button>

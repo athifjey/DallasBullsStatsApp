@@ -26,3 +26,17 @@ This uses TypeScript project references. There are three projects in the `src` d
  - `common` contains code shared between the extension and client.
 
 When you run `watch`, `compile`, or `dev`, we invoke both `tsc` and `webpack` to compile the extension and the client portion of the code.
+
+### Versioning and Release
+
+Use npm version commands so `package.json` and `package-lock.json` stay in sync automatically.
+
+ - Patch release: `npm run release:patch`
+ - Minor release: `npm run release:minor`
+ - Major release: `npm run release:major`
+
+If you only want to bump locally (without push), use:
+
+ - `npm run version:patch`
+ - `npm run version:minor`
+ - `npm run version:major`

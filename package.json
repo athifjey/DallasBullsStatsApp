@@ -2,7 +2,7 @@
 	"name": "dallas-bulls-stats",
 	"displayName": "Dallas Bulls Stats",
 	"description": "Notebook renderer and browser app for Dallas Bulls cricket team statistics.",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"private": true,
 	"license": "MIT",
 	"engines": {
@@ -37,7 +37,13 @@
 		"watch:extension": "tsc -b --watch",
 		"watch:client": "webpack --mode development --watch",
 		"dev": "concurrently -r npm:watch:extension npm:watch:client",
-		"pretest": "npm run compile && npm run lint"
+		"pretest": "npm run compile && npm run lint",
+		"version:patch": "npm version patch",
+		"version:minor": "npm version minor",
+		"version:major": "npm version major",
+		"release:patch": "npm run version:patch && git push origin main --follow-tags",
+		"release:minor": "npm run version:minor && git push origin main --follow-tags",
+		"release:major": "npm run version:major && git push origin main --follow-tags"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.13.0",

@@ -11,6 +11,68 @@
 	padding: 1.5rem 2rem;
 }
 
+.update-banner {
+	position: sticky;
+	top: 0;
+	z-index: 1300;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 0.85rem;
+	padding: 0.7rem 1rem;
+	background: linear-gradient(90deg, #143625, #1e4d36);
+	color: #f4fff7;
+	border-bottom: 1px solid rgba(126, 196, 156, 0.35);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.update-banner__body {
+	display: grid;
+	gap: 0.2rem;
+	min-width: 0;
+}
+
+.update-banner__title {
+	font-size: 0.86rem;
+	font-weight: 800;
+	letter-spacing: 0.25px;
+	text-transform: uppercase;
+}
+
+.update-banner__text {
+	font-size: 0.83rem;
+	color: rgba(244, 255, 247, 0.92);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.update-banner__actions {
+	display: flex;
+	gap: 0.55rem;
+	flex-shrink: 0;
+}
+
+.update-banner__btn {
+	border: 1px solid rgba(255, 255, 255, 0.28);
+	background: #f4fff7;
+	color: #183a29;
+	padding: 0.38rem 0.7rem;
+	border-radius: 8px;
+	font-size: 0.78rem;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.update-banner__btn--ghost {
+	background: transparent;
+	color: #f4fff7;
+}
+
+.update-banner__btn:hover {
+	filter: brightness(0.95);
+}
+
 /* ── Header ─────────────────────────────────────────────────── */
 .app-header {
 	display: flex;
@@ -318,6 +380,21 @@
 
 	.app-content {
 		padding: 1rem;
+	}
+
+	.update-banner {
+		padding: 0.65rem 0.85rem;
+	}
+}
+
+@media (max-width: 700px) {
+	.update-banner {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.update-banner__text {
+		white-space: normal;
 	}
 }
 

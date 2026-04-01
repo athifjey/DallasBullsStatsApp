@@ -5,6 +5,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      deploy_message:
+        description: Custom deploy message shown in the app update banner
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -32,6 +37,8 @@ jobs:
         run: npm ci
 
       - name: Build pages artifact
+        env:
+          DEPLOY_MESSAGE: ${{ github.event.inputs.deploy_message || github.event.head_commit.message || 'A new app build is available.' }}
         run: npm run build:pages
 
       - name: Upload artifact

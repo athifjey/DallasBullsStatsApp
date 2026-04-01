@@ -31,6 +31,8 @@ const pageHtml = html.replace('./out/browser/browser.js', `./${versionedBundleNa
 
 const packageJson = JSON.parse(await readFile(resolve(repoRoot, 'package.json'), 'utf8'));
 const deployMessage = process.env.DEPLOY_MESSAGE?.trim() || 'A new app build is available.';
+const pushApiUrl = process.env.PUSH_API_URL?.trim() || '';
+const pushVapidPublicKey = process.env.PUSH_VAPID_PUBLIC_KEY?.trim() || '';
 const gitSha = process.env.GITHUB_SHA?.trim() || (() => {
 	try {
 		return execSync('git rev-parse --short HEAD', { cwd: repoRoot, stdio: ['ignore', 'pipe', 'ignore'] }).toString('utf8').trim();
@@ -45,6 +47,8 @@ const versionMetadata = {
 	commitSha: gitSha,
 	buildTimeUtc: new Date().toISOString(),
 	message: deployMessage,
+	...(pushApiUrl ? { pushApiUrl } : {}),
+	...(pushVapidPublicKey ? { pushVapidPublicKey } : {}),
 };
 
 await writeFile(distIndexPath, pageHtml, 'utf8');

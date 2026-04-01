@@ -18,6 +18,13 @@ interface VersionMetadata {
 	commitSha: string;
 	buildTimeUtc: string;
 	message?: string;
+	pushApiUrl?: string;
+	pushVapidPublicKey?: string;
+}
+
+interface PushConfig {
+	apiUrl: string;
+	vapidPublicKey: string;
 }
 
 const PAGE_ROUTES: Record<Page, string> = {
@@ -59,6 +66,15 @@ const PAGE_MAP: Record<Page, React.FC> = {
 
 export const App: React.FC = () => {
 	const [activePage, setActivePage] = useState<Page>(getPageFromHash);
+	const [pushConfig, setPushConfig] = useState<PushConfig | null>(null);
+	const [isPushSubscribed, setIsPushSubscribed] = useState(false);
+	const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() => {
+		if (typeof window === 'undefined' || !('Notification' in window)) {
+			return 'default';
+		}
+
+		return Notification.permission;
+	});
 	const [knownBuildId, setKnownBuildId] = useState<string | null>(() => {
 		if (typeof window === 'undefined') {
 			return null;
@@ -103,7 +119,64 @@ export const App: React.FC = () => {
 			commitSha: typeof data.commitSha === 'string' ? data.commitSha : 'unknown',
 			buildTimeUtc: typeof data.buildTimeUtc === 'string' ? data.buildTimeUtc : '',
 			message: typeof data.message === 'string' ? data.message : undefined,
+			pushApiUrl: typeof data.pushApiUrl === 'string' ? data.pushApiUrl : undefined,
+			pushVapidPublicKey: typeof data.pushVapidPublicKey === 'string' ? data.pushVapidPublicKey : undefined,
 		};
+	};
+
+	const toUint8Array = (base64: string): Uint8Array => {
+		const padded = `${base64}${'='.repeat((4 - (base64.length % 4)) % 4)}`
+			.replace(/-/g, '+')
+			.replace(/_/g, '/');
+		const raw = window.atob(padded);
+		const output = new Uint8Array(raw.length);
+		for (let index = 0; index < raw.length; index += 1) {
+			output[index] = raw.charCodeAt(index);
+		}
+		return output;
+	};
+
+	const subscribeForPush = async (requestPermission: boolean): Promise<boolean> => {
+		if (!pushConfig || typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+			return false;
+		}
+
+		if (notificationPermission === 'denied') {
+			return false;
+		}
+
+		let permission = notificationPermission;
+		if (permission !== 'granted' && requestPermission && 'Notification' in window) {
+			permission = await Notification.requestPermission();
+			setNotificationPermission(permission);
+		}
+
+		if (permission !== 'granted') {
+			return false;
+		}
+
+		const registration = await navigator.serviceWorker.ready;
+		let subscription = await registration.pushManager.getSubscription();
+
+		if (!subscription) {
+			subscription = await registration.pushManager.subscribe({
+				userVisibleOnly: true,
+				applicationServerKey: toUint8Array(pushConfig.vapidPublicKey),
+			});
+		}
+
+		const response = await fetch(`${pushConfig.apiUrl}/api/push/subscribe`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ subscription }),
+		});
+
+		if (!response.ok) {
+			return false;
+		}
+
+		setIsPushSubscribed(true);
+		return true;
 	};
 
 	const maybeNotifyForUpdate = async (metadata: VersionMetadata) => {
@@ -134,7 +207,6 @@ export const App: React.FC = () => {
 						body,
 						icon: './assets/logo.png',
 						tag: `update-${metadata.buildId}`,
-						renotify: false,
 					});
 					persistNotifiedBuildId(metadata.buildId);
 					return;
@@ -161,6 +233,13 @@ export const App: React.FC = () => {
 				return;
 			}
 
+			if (metadata.pushApiUrl && metadata.pushVapidPublicKey) {
+				setPushConfig({
+					apiUrl: metadata.pushApiUrl.replace(/\/$/, ''),
+					vapidPublicKey: metadata.pushVapidPublicKey,
+				});
+			}
+
 			if (!knownBuildId) {
 				persistKnownBuildId(metadata.buildId);
 				return;
@@ -174,6 +253,29 @@ export const App: React.FC = () => {
 			// Ignore polling failures and retry on next interval.
 		}
 	};
+
+	useEffect(() => {
+		if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+			return;
+		}
+
+		navigator.serviceWorker.ready
+			.then(registration => registration.pushManager.getSubscription())
+			.then(subscription => {
+				setIsPushSubscribed(Boolean(subscription));
+			})
+			.catch(() => {
+				setIsPushSubscribed(false);
+			});
+	}, []);
+
+	useEffect(() => {
+		if (!pushConfig) {
+			return;
+		}
+
+		void subscribeForPush(false);
+	}, [pushConfig, notificationPermission]);
 
 	useEffect(() => {
 		const onHashChange = () => {
@@ -221,6 +323,28 @@ export const App: React.FC = () => {
 
 	return (
 		<div className="app">
+			{pushConfig && !isPushSubscribed && notificationPermission !== 'denied' && (
+				<div className="update-banner" role="status" aria-live="polite">
+					<div className="update-banner__body">
+						<strong className="update-banner__title">Enable System Alerts</strong>
+						<span className="update-banner__text">
+							Allow notifications to receive push updates even when the app is in background.
+						</span>
+					</div>
+					<div className="update-banner__actions">
+						<button
+							type="button"
+							className="update-banner__btn"
+							onClick={() => {
+								void subscribeForPush(true);
+							}}
+						>
+							Enable
+						</button>
+					</div>
+				</div>
+			)}
+
 			{availableUpdate && (
 				<div className="update-banner" role="status" aria-live="polite">
 					<div className="update-banner__body">

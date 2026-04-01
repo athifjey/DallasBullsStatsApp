@@ -1,0 +1,16 @@
+{
+  "name": "dallas-bulls-push-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "vapid:generate": "node -e \"import webpush from 'web-push'; console.log(webpush.generateVAPIDKeys())\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "web-push": "^3.6.7"
+  }
+}

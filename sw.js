@@ -81,3 +81,45 @@ self.addEventListener('fetch', event => {
     return response;
   })());
 });
+
+self.addEventListener('push', event => {
+  const payload = (() => {
+    try {
+      return event.data ? event.data.json() : {};
+    } catch {
+      return {};
+    }
+  })();
+
+  const title = payload.title || 'Dallas Bulls Stats';
+  const body = payload.body || 'A new update is available.';
+  const url = payload.url || './index.html';
+
+  event.waitUntil(self.registration.showNotification(title, {
+    body,
+    icon: './assets/logo.png',
+    badge: './assets/logo.png',
+    tag: payload.tag || 'dallas-bulls-push',
+    data: { url },
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+
+  const targetUrl = (event.notification.data && event.notification.data.url) || './index.html';
+  event.waitUntil((async () => {
+    const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of allClients) {
+      if ('focus' in client) {
+        client.navigate(targetUrl);
+        return client.focus();
+      }
+    }
+
+    if (clients.openWindow) {
+      return clients.openWindow(targetUrl);
+    }
+    return null;
+  })());
+});

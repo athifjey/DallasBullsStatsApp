@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from 'react';
 
-export type Page = 'dashboard' | 'batting-summary' | 'player-list' | 'bowling-summary' | 'batting-history' | 'bowling-history';
+export type Page = 'dashboard' | 'team-stats' | 'batting-summary' | 'player-list' | 'bowling-summary' | 'batting-history' | 'bowling-history';
 
 interface HeaderProps {
 	activePage: Page;
 	onNavigate: (page: Page) => void;
 }
 
-const NAV_ITEMS: { id: Page; label: string }[] = [
+interface NavItem {
+	id: Page;
+	label: string;
+	tag?: string;
+	featured?: boolean;
+}
+
+const NAV_ITEMS: NavItem[] = [
 	{ id: 'dashboard', label: 'Dashboard' },
+	{ id: 'team-stats', label: 'Team Stats', tag: 'New', featured: true },
 	{ id: 'batting-summary', label: 'Batting Summary' },
 	{ id: 'bowling-summary', label: 'Bowling Summary' },
 	{ id: 'batting-history', label: 'Batting History' },
@@ -60,10 +68,11 @@ export const Header: React.FC<HeaderProps> = ({ activePage, onNavigate }) => {
 					{NAV_ITEMS.map(item => (
 						<button
 							key={item.id}
-							className={`app-nav__item${activePage === item.id ? ' app-nav__item--active' : ''}`}
+							className={`app-nav__item${item.featured ? ' app-nav__item--featured' : ''}${activePage === item.id ? ' app-nav__item--active' : ''}`}
 							onClick={() => handleNavigate(item.id)}
 						>
-							{item.label}
+							<span>{item.label}</span>
+							{item.tag && <span className="app-nav__tag">{item.tag}</span>}
 						</button>
 					))}
 				</nav>
@@ -95,10 +104,11 @@ export const Header: React.FC<HeaderProps> = ({ activePage, onNavigate }) => {
 						<button
 							type="button"
 							key={item.id}
-							className={`app-side-nav__item${activePage === item.id ? ' app-side-nav__item--active' : ''}`}
+							className={`app-side-nav__item${item.featured ? ' app-side-nav__item--featured' : ''}${activePage === item.id ? ' app-side-nav__item--active' : ''}`}
 							onClick={() => handleNavigate(item.id)}
 						>
-							{item.label}
+							<span>{item.label}</span>
+							{item.tag && <span className="app-nav__tag app-nav__tag--side">{item.tag}</span>}
 						</button>
 					))}
 				</nav>

@@ -134,7 +134,10 @@ const ChartCard: React.FC<ChartConfig> = ({ title, accentClass, valueFormatter, 
 							<div className="dashboard-bars__track">
 								<div
 									className={`dashboard-bars__fill ${accentClass}`}
-									style={{ width: `${maxValue === 0 ? 0 : (row.value / maxValue) * 100}%` }}
+									style={{
+										width: `${maxValue === 0 ? 0 : (row.value / maxValue) * 100}%`,
+										animationDelay: `${index * 120}ms`,
+									}}
 								/>
 							</div>
 						</div>

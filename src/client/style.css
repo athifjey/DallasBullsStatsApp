@@ -67,6 +67,9 @@
 }
 
 .app-nav__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
 	background: none;
 	border: none;
 	color: #a8c5b0;
@@ -87,6 +90,36 @@
 .app-nav__item--active {
 	color: #ffffff;
 	border-bottom-color: #4caf72;
+}
+
+.app-nav__item--featured {
+	color: #ffd68a;
+	border-bottom-color: rgba(255, 200, 92, 0.45);
+}
+
+.app-nav__item--featured:hover,
+.app-nav__item--featured.app-nav__item--active {
+	color: #fff4cf;
+	border-bottom-color: #ffc85c;
+}
+
+.app-nav__tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.15rem 0.42rem;
+	border-radius: 999px;
+	background: #ffc85c;
+	color: #1f291f;
+	font-size: 0.62rem;
+	font-weight: 800;
+	letter-spacing: 0.45px;
+	text-transform: uppercase;
+	line-height: 1;
+}
+
+.app-nav__tag--side {
+	margin-left: auto;
 }
 
 .app-header__menu-btn {
@@ -173,6 +206,9 @@
 }
 
 .app-side-nav__item {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
 	border: 0;
 	background: transparent;
 	color: #b9d3c6;
@@ -192,6 +228,17 @@
 .app-side-nav__item--active {
 	background: rgba(115, 166, 142, 0.22);
 	color: #fff;
+}
+
+.app-side-nav__item--featured {
+	color: #ffe1a3;
+	background: rgba(255, 200, 92, 0.08);
+}
+
+.app-side-nav__item--featured:hover,
+.app-side-nav__item--featured.app-side-nav__item--active {
+	background: rgba(255, 200, 92, 0.18);
+	color: #fff6df;
 }
 
 @media (min-width: 1025px) {
@@ -243,6 +290,8 @@
 	position: relative;
 	min-height: calc(100vh - 90px);
 	max-width: none;
+	display: flex;
+	flex-direction: column;
 }
 
 .dashboard-bg {
@@ -338,8 +387,9 @@
 	position: relative;
 	z-index: 1;
 	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 1.25rem;
+	margin-bottom: 1rem;
 }
 
 .dashboard-card {
@@ -413,6 +463,18 @@
 	height: 100%;
 	min-width: 2px;
 	border-radius: 999px;
+	transform-origin: left center;
+	transform: scaleX(0);
+	animation: dashboard-bar-reveal 1.6s ease forwards;
+}
+
+@keyframes dashboard-bar-reveal {
+	from {
+		transform: scaleX(0);
+	}
+	to {
+		transform: scaleX(1);
+	}
 }
 
 .dashboard-bars__fill--wickets {
@@ -446,8 +508,8 @@
 .dashboard-footer {
 	position: relative;
 	z-index: 1;
-	margin-top: 1rem;
-	padding: 0.75rem 0.9rem;
+	margin-top: auto;
+	padding: 1rem 0.9rem 0.75rem;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -496,6 +558,397 @@
 	color: #555;
 	margin: 0;
 	font-size: 0.875rem;
+}
+
+.team-stats-summary {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.9rem;
+	margin-bottom: 1rem;
+}
+
+.team-stats-summary__card,
+.team-stats-insight {
+	background: linear-gradient(180deg, #ffffff 0%, #f4faf6 100%);
+	border: 1px solid #d7e7dd;
+	border-radius: 10px;
+	padding: 1rem;
+	box-shadow: 0 6px 18px rgba(26, 58, 42, 0.08);
+}
+
+.team-stats-summary__label,
+.team-stats-insight__title {
+	display: block;
+	margin-bottom: 0.45rem;
+	font-size: 0.74rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.45px;
+	color: #5f7768;
+}
+
+.team-stats-summary__value,
+.team-stats-insight__value {
+	display: block;
+	margin-bottom: 0.25rem;
+	font-family: 'Racing Sans One', sans-serif;
+	font-size: 1.45rem;
+	line-height: 1.2;
+	color: #1a3a2a;
+	word-break: break-word;
+}
+
+.team-stats-summary__value--form {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	align-items: center;
+	font-family: 'Barlow', sans-serif;
+	font-size: 1rem;
+	font-weight: 700;
+}
+
+.team-stats-summary__head {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 0.75rem;
+	margin-bottom: 0.5rem;
+}
+
+.team-stats-summary__pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.32rem 0.65rem;
+	border-radius: 999px;
+	background: #1a3a2a;
+	color: #ffffff;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.35px;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.team-stats-summary__card--record {
+	background: linear-gradient(180deg, #f7fbf8 0%, #edf7f1 100%);
+}
+
+.team-stats-record-table-wrap {
+	margin-bottom: 0.45rem;
+	border: 1px solid #d4e5db;
+	border-radius: 10px;
+	overflow: hidden;
+	background: #ffffff;
+}
+
+.team-stats-record-table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+
+.team-stats-record-table th,
+.team-stats-record-table td {
+	width: 25%;
+	text-align: center;
+	padding: 0.7rem 0.35rem;
+	border-right: 1px solid #e1ede5;
+}
+
+.team-stats-record-table th:last-child,
+.team-stats-record-table td:last-child {
+	border-right: 0;
+}
+
+.team-stats-record-table th {
+	background: #1a3a2a;
+	color: #ffffff;
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+}
+
+.team-stats-record-table td {
+	font-family: 'Racing Sans One', sans-serif;
+	font-size: 1.2rem;
+	color: #1a3a2a;
+	background: #ffffff;
+}
+
+.team-stats-summary__meta,
+.team-stats-insight__meta {
+	margin: 0;
+	font-size: 0.82rem;
+	color: #5e6f65;
+	line-height: 1.4;
+}
+
+.team-stats-form,
+.team-stats-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 2.4rem;
+	padding: 0.34rem 0.6rem;
+	border-radius: 999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.35px;
+	text-transform: uppercase;
+	color: #fff;
+	white-space: nowrap;
+}
+
+.team-stats-form--win,
+.team-stats-badge--win {
+	background: #2f8f62;
+}
+
+.team-stats-form--loss,
+.team-stats-badge--loss {
+	background: #c44d3f;
+}
+
+.team-stats-form--tie,
+.team-stats-badge--tie {
+	background: #7a5bb6;
+}
+
+.team-stats-form--no-result,
+.team-stats-badge--no-result {
+	background: #667788;
+}
+
+.team-stats-insights {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.9rem;
+	margin-bottom: 1rem;
+}
+
+.team-stats-insight {
+	min-height: 134px;
+}
+
+.team-performance-panel {
+	margin-bottom: 1rem;
+}
+
+.team-performance-panel__tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	margin-bottom: 0.8rem;
+}
+
+.team-performance-panel__tab {
+	border: 1px solid #cfe1d8;
+	background: #ffffff;
+	color: #1a3a2a;
+	padding: 0.65rem 0.95rem;
+	border-radius: 999px;
+	font-size: 0.84rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.team-performance-panel__tab:hover,
+.team-performance-panel__tab--active {
+	background: #1a3a2a;
+	border-color: #1a3a2a;
+	color: #ffffff;
+	box-shadow: 0 4px 12px rgba(26, 58, 42, 0.14);
+}
+
+.team-performance-chart {
+	background: linear-gradient(180deg, #ffffff 0%, #f5faf7 100%);
+	border: 1px solid #d7e7dd;
+	border-radius: 12px;
+	padding: 1rem;
+	box-shadow: 0 6px 18px rgba(26, 58, 42, 0.08);
+}
+
+.team-performance-chart__head {
+	margin-bottom: 0.9rem;
+}
+
+.team-performance-chart__title {
+	margin: 0 0 0.3rem;
+	font-family: 'Racing Sans One', sans-serif;
+	font-size: 1.1rem;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
+	color: #1a3a2a;
+}
+
+.team-performance-chart__description {
+	margin: 0;
+	font-size: 0.82rem;
+	line-height: 1.45;
+	color: #5c6f64;
+}
+
+.team-performance-chart__empty {
+	padding: 0.85rem;
+	border-radius: 8px;
+	background: #f3f8f5;
+	color: #5a6d63;
+	font-size: 0.85rem;
+}
+
+.team-performance-chart__rows {
+	display: grid;
+	gap: 0.9rem;
+}
+
+.team-performance-chart__row {
+	display: grid;
+	gap: 0.45rem;
+}
+
+.team-performance-chart__meta {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	gap: 1rem;
+}
+
+.team-performance-chart__name {
+	font-size: 0.92rem;
+	font-weight: 700;
+	color: #173525;
+}
+
+.team-performance-chart__record {
+	font-size: 0.76rem;
+	font-weight: 600;
+	color: #62816f;
+	text-transform: uppercase;
+	letter-spacing: 0.35px;
+}
+
+.team-performance-chart__summary {
+	display: grid;
+	justify-items: end;
+	font-size: 0.76rem;
+	font-weight: 600;
+	color: #4e6959;
+	white-space: nowrap;
+}
+
+.team-performance-chart__bar-track,
+.team-performance-chart__stack {
+	display: flex;
+	overflow: hidden;
+	border-radius: 999px;
+	height: 10px;
+	background: #e3eee7;
+}
+
+.team-performance-chart__bar-fill {
+	height: 100%;
+	border-radius: inherit;
+	background: linear-gradient(90deg, #f0ad2d, #ffd16b);
+}
+
+.team-performance-chart__stack {
+	height: 8px;
+	background: #edf4f0;
+}
+
+.team-performance-chart__segment--win {
+	background: #2f8f62;
+}
+
+.team-performance-chart__segment--loss {
+	background: #c44d3f;
+}
+
+.team-performance-chart__segment--tie {
+	background: #7a5bb6;
+}
+
+.team-performance-chart__segment--no-result {
+	background: #667788;
+}
+
+.team-stats-controls {
+	display: grid;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+
+.team-stats-controls__search {
+	max-width: 560px;
+}
+
+.team-stats-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.55rem;
+}
+
+.team-stats-filter {
+	border: 1px solid #cfe1d8;
+	background: #fff;
+	color: #1a3a2a;
+	padding: 0.55rem 0.8rem;
+	border-radius: 999px;
+	font-size: 0.82rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.team-stats-filter:hover,
+.team-stats-filter--active {
+	background: #1a3a2a;
+	border-color: #1a3a2a;
+	color: #fff;
+}
+
+.team-stats-message {
+	min-width: 320px;
+	white-space: normal;
+	line-height: 1.45;
+}
+
+.team-stats-empty {
+	text-align: center;
+	color: #5a6d63;
+	padding: 1rem 0.75rem;
+}
+
+@media (max-width: 1100px) {
+	.team-stats-summary,
+	.team-stats-insights {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 640px) {
+	.team-stats-summary,
+	.team-stats-insights {
+		grid-template-columns: 1fr;
+	}
+
+	.team-stats-summary__head {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.team-performance-chart__meta {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.team-performance-chart__summary {
+		justify-items: start;
+		white-space: normal;
+	}
 }
 
 /* ── Batting Summary Form Banner ───────────────────────────── */

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Header, Page } from './Header';
 import { DashboardPage } from './pages/DashboardPage';
+import { TeamStatsPage } from './pages/TeamStatsPage';
 import { BattingSummaryPage } from './pages/BattingSummaryPage';
 import { PlayerListPage } from './pages/PlayerListPage';
 import { BowlingSummaryPage } from './pages/BowlingSummaryPage';
@@ -9,6 +10,7 @@ import { BowlingHistoryPage } from './pages/BowlingHistoryPage';
 
 const PAGE_ROUTES: Record<Page, string> = {
 	'dashboard': 'dashboard',
+	'team-stats': 'team-stats',
 	'batting-summary': 'batting-summary',
 	'player-list': 'player-list',
 	'bowling-summary': 'bowling-summary',
@@ -35,6 +37,7 @@ const getPageFromHash = (): Page => {
 
 const PAGE_MAP: Record<Page, React.FC> = {
 	'dashboard': DashboardPage,
+	'team-stats': TeamStatsPage,
 	'batting-summary': BattingSummaryPage,
 	'bowling-summary': BowlingSummaryPage,
 	'batting-history': BattingHistoryPage,

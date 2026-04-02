@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-export type Page = 'dashboard' | 'team-stats' | 'batting-summary' | 'player-list' | 'bowling-summary' | 'batting-history' | 'bowling-history';
+export type Page = 'dashboard' | 'team-stats' | 'batting-summary' | 'player-list' | 'bowling-summary' | 'batting-history' | 'bowling-history' | 'admin-notifications';
 
 interface HeaderProps {
 	activePage: Page;
@@ -68,7 +68,13 @@ export const Header: React.FC<HeaderProps> = ({ activePage, onNavigate }) => {
 						<span className="app-header__title">Dallas Bulls Stats</span>
 					</div>
 
-					<div className="app-header__menu-spacer" />
+					<button
+						type="button"
+						className="app-header__admin-btn"
+						onClick={() => handleNavigate('admin-notifications')}
+					>
+						Admin
+					</button>
 				</div>
 
 				<nav className="app-nav app-nav--desktop">

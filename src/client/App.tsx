@@ -7,6 +7,7 @@ import { PlayerListPage } from './pages/PlayerListPage';
 import { BowlingSummaryPage } from './pages/BowlingSummaryPage';
 import { BattingHistoryPage } from './pages/BattingHistoryPage';
 import { BowlingHistoryPage } from './pages/BowlingHistoryPage';
+import { AdminNotificationsPage } from './pages/AdminNotificationsPage';
 
 const VERSION_POLL_MS = 5 * 60 * 1000;
 const LAST_SEEN_BUILD_KEY = 'dallas-bulls:last-seen-build';
@@ -35,6 +36,7 @@ const PAGE_ROUTES: Record<Page, string> = {
 	'bowling-summary': 'bowling-summary',
 	'batting-history': 'batting-history',
 	'bowling-history': 'bowling-history',
+	'admin-notifications': 'admin-notifications',
 };
 
 const isPage = (value: string): value is Page => {
@@ -62,6 +64,7 @@ const PAGE_MAP: Record<Page, React.FC> = {
 	'batting-history': BattingHistoryPage,
 	'bowling-history': BowlingHistoryPage,
     'player-list': PlayerListPage,
+	'admin-notifications': AdminNotificationsPage,
 };
 
 export const App: React.FC = () => {

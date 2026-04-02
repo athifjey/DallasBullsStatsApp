@@ -3,15 +3,19 @@ import cors from 'cors';
 import webpush from 'web-push';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 
 const PORT = Number(process.env.PORT || 8787);
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 const ADMIN_TOKEN = process.env.PUSH_ADMIN_TOKEN || '';
+const ADMIN_PAGE_PASSWORD = process.env.ADMIN_PAGE_PASSWORD || '';
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@example.com';
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || '';
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
 const STORE_PATH = process.env.PUSH_SUBSCRIPTIONS_FILE
   || path.resolve(process.cwd(), 'subscriptions.json');
+const ADMIN_SESSION_TTL_MS = 15 * 60 * 1000;
+const adminSessions = new Map();
 
 if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
   throw new Error('Missing VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY');
@@ -20,7 +24,24 @@ if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
 webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 const app = express();
-app.use(cors({ origin: CORS_ORIGIN === '*' ? true : CORS_ORIGIN }));
+
+const allowedOrigins = CORS_ORIGIN
+  .split(',')
+  .map(value => value.trim())
+  .filter(Boolean);
+
+const isWildcardCors = allowedOrigins.includes('*');
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || isWildcardCors || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`CORS origin not allowed: ${origin}`));
+  },
+}));
 app.use(express.json({ limit: '256kb' }));
 
 const readSubscriptions = async () => {
@@ -35,6 +56,70 @@ const readSubscriptions = async () => {
 
 const writeSubscriptions = async subs => {
   await fs.writeFile(STORE_PATH, JSON.stringify(subs, null, 2), 'utf8');
+};
+
+const createSessionToken = () => randomBytes(24).toString('base64url');
+
+const passwordMatches = provided => {
+  if (!ADMIN_PAGE_PASSWORD) {
+    return false;
+  }
+
+  const left = Buffer.from(provided || '', 'utf8');
+  const right = Buffer.from(ADMIN_PAGE_PASSWORD, 'utf8');
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return timingSafeEqual(left, right);
+};
+
+const requireAdminSession = (req, res, next) => {
+  const token = (req.headers['x-admin-session'] || '').toString();
+  if (!token) {
+    res.status(401).json({ error: 'Missing admin session' });
+    return;
+  }
+
+  const expiresAt = adminSessions.get(token);
+  if (!expiresAt || expiresAt < Date.now()) {
+    adminSessions.delete(token);
+    res.status(401).json({ error: 'Admin session expired' });
+    return;
+  }
+
+  next();
+};
+
+const sendToAllSubscriptions = async payload => {
+  const subs = await readSubscriptions();
+  if (!subs.length) {
+    return { sent: 0, failed: 0, removed: 0 };
+  }
+
+  let sent = 0;
+  let failed = 0;
+  const staleEndpoints = new Set();
+
+  await Promise.all(subs.map(async sub => {
+    try {
+      await webpush.sendNotification(sub, JSON.stringify(payload));
+      sent += 1;
+    } catch (error) {
+      failed += 1;
+      const statusCode = error?.statusCode;
+      if (statusCode === 404 || statusCode === 410) {
+        staleEndpoints.add(sub.endpoint);
+      }
+    }
+  }));
+
+  if (staleEndpoints.size) {
+    const cleaned = subs.filter(sub => !staleEndpoints.has(sub.endpoint));
+    await writeSubscriptions(cleaned);
+  }
+
+  return { sent, failed, removed: staleEndpoints.size };
 };
 
 const requireAdminToken = (req, res, next) => {
@@ -88,6 +173,42 @@ app.post('/api/push/unsubscribe', async (req, res) => {
   res.json({ ok: true, count: updated.length });
 });
 
+app.post('/api/admin/auth', (req, res) => {
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+  if (!passwordMatches(password)) {
+    res.status(401).json({ error: 'Invalid password' });
+    return;
+  }
+
+  const token = createSessionToken();
+  adminSessions.set(token, Date.now() + ADMIN_SESSION_TTL_MS);
+  res.json({ ok: true, sessionToken: token, expiresInMs: ADMIN_SESSION_TTL_MS });
+});
+
+app.post('/api/admin/send-system', requireAdminSession, async (req, res) => {
+  const payload = {
+    title: 'Dallas Bulls System Notification',
+    body: typeof req.body?.body === 'string' ? req.body.body : 'System update from Dallas Bulls Stats.',
+    url: typeof req.body?.url === 'string' ? req.body.url : './index.html',
+    tag: 'system-notification',
+  };
+
+  const result = await sendToAllSubscriptions(payload);
+  res.json({ ok: true, ...result });
+});
+
+app.post('/api/admin/send-push', requireAdminSession, async (req, res) => {
+  const payload = {
+    title: 'Dallas Bulls Push Notification',
+    body: typeof req.body?.body === 'string' ? req.body.body : 'Push update from Dallas Bulls Stats.',
+    url: typeof req.body?.url === 'string' ? req.body.url : './index.html',
+    tag: 'push-notification',
+  };
+
+  const result = await sendToAllSubscriptions(payload);
+  res.json({ ok: true, ...result });
+});
+
 app.post('/api/push/send', requireAdminToken, async (req, res) => {
   const payload = {
     title: typeof req.body?.title === 'string' ? req.body.title : 'Dallas Bulls Stats',
@@ -96,35 +217,8 @@ app.post('/api/push/send', requireAdminToken, async (req, res) => {
     tag: typeof req.body?.tag === 'string' ? req.body.tag : 'dallas-bulls-push',
   };
 
-  const subs = await readSubscriptions();
-  if (!subs.length) {
-    res.json({ ok: true, sent: 0, failed: 0, removed: 0 });
-    return;
-  }
-
-  let sent = 0;
-  let failed = 0;
-  const staleEndpoints = new Set();
-
-  await Promise.all(subs.map(async sub => {
-    try {
-      await webpush.sendNotification(sub, JSON.stringify(payload));
-      sent += 1;
-    } catch (error) {
-      failed += 1;
-      const statusCode = error?.statusCode;
-      if (statusCode === 404 || statusCode === 410) {
-        staleEndpoints.add(sub.endpoint);
-      }
-    }
-  }));
-
-  if (staleEndpoints.size) {
-    const cleaned = subs.filter(sub => !staleEndpoints.has(sub.endpoint));
-    await writeSubscriptions(cleaned);
-  }
-
-  res.json({ ok: true, sent, failed, removed: staleEndpoints.size });
+  const result = await sendToAllSubscriptions(payload);
+  res.json({ ok: true, ...result });
 });
 
 app.listen(PORT, () => {

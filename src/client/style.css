@@ -119,6 +119,25 @@
 	text-align: center;
 }
 
+.app-header__admin-btn {
+	background: #123a2a;
+	color: #d8f4e3;
+	border: 1px solid rgba(216, 244, 227, 0.35);
+	border-radius: 999px;
+	padding: 0.45rem 0.9rem;
+	font-size: 0.8rem;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.app-header__admin-btn:hover {
+	background: #175137;
+	transform: translateY(-1px);
+}
+
 /* ── Navigation ─────────────────────────────────────────────── */
 .app-nav {
 	display: flex;
@@ -236,6 +255,79 @@
 	display: none;
 	width: 64px;
 	height: 1px;
+}
+
+.admin-panel {
+	display: grid;
+	gap: 1rem;
+	padding: 1rem;
+	border: 1px solid #dbe6df;
+	border-radius: 12px;
+	background: #ffffff;
+}
+
+.admin-panel__label {
+	font-weight: 700;
+	font-size: 0.9rem;
+	color: #123a2a;
+}
+
+.admin-panel__input,
+.admin-panel__textarea {
+	width: 100%;
+	padding: 0.7rem 0.8rem;
+	border: 1px solid #c9d9cf;
+	border-radius: 8px;
+	font-size: 0.95rem;
+	font-family: Barlow, sans-serif;
+}
+
+.admin-panel__textarea {
+	min-height: 110px;
+	resize: vertical;
+}
+
+.admin-panel__btn {
+	justify-self: start;
+	padding: 0.6rem 1rem;
+	border: 0;
+	border-radius: 8px;
+	background: #1a5a3d;
+	color: #ffffff;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.admin-panel__btn:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+.admin-panel__section {
+	display: grid;
+	gap: 0.7rem;
+	padding: 0.85rem;
+	border: 1px solid #e0ebe4;
+	border-radius: 10px;
+	background: #f9fcfa;
+}
+
+.admin-panel__section-title {
+	margin: 0;
+	font-size: 1rem;
+	color: #103223;
+}
+
+.admin-panel__error {
+	margin: 0;
+	color: #b42318;
+	font-weight: 600;
+}
+
+.admin-panel__status {
+	margin: 0;
+	color: #0c3f2b;
+	font-weight: 600;
 }
 
 .app-header__menu-btn:hover {

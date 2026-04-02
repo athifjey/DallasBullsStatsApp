@@ -145,7 +145,7 @@ export const App: React.FC = () => {
 			return false;
 		}
 
-		let permission = notificationPermission;
+		let permission: NotificationPermission = notificationPermission;
 		if (permission !== 'granted' && requestPermission && 'Notification' in window) {
 			permission = await Notification.requestPermission();
 			setNotificationPermission(permission);
@@ -161,7 +161,7 @@ export const App: React.FC = () => {
 		if (!subscription) {
 			subscription = await registration.pushManager.subscribe({
 				userVisibleOnly: true,
-				applicationServerKey: toUint8Array(pushConfig.vapidPublicKey),
+				applicationServerKey: toUint8Array(pushConfig.vapidPublicKey) as unknown as BufferSource,
 			});
 		}
 

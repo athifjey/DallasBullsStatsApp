@@ -456,6 +456,11 @@
 		display: inline-flex;
 		align-items: center;
 		justify-self: start;
+		padding: 0.5rem 0.6rem;
+	}
+
+	.app-header__menu-label {
+		display: none;
 	}
 
 	.app-header__menu-spacer {

@@ -1,6 +1,6 @@
 import { SheetRow } from './sheetsApi';
 
-export interface BattingPointColumnKeys {
+interface BattingPointColumnKeys {
 	runsKey?: string;
 	foursKey?: string;
 	sixesKey?: string;
@@ -9,7 +9,7 @@ export interface BattingPointColumnKeys {
 	dismissalKey?: string;
 }
 
-export interface BowlingPointColumnKeys {
+interface BowlingPointColumnKeys {
 	wicketsKey?: string;
 	economyKey?: string;
 }

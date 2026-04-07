@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Dallas Bulls Stats</title>
-	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' https://videos.pexels.com; connect-src 'self' https://sheets.googleapis.com https://*.googleapis.com; manifest-src 'self'; base-uri 'self'; form-action 'self'">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' https://videos.pexels.com; connect-src 'self' https://sheets.googleapis.com https://*.googleapis.com; manifest-src 'self'; base-uri 'self'; form-action 'self'">
 	<meta name="theme-color" content="#1a3a2a">
 	<meta name="description" content="Dallas Bulls Cricket Club – Team Statistics">
 	<meta name="mobile-web-app-capable" content="yes">
@@ -17,45 +17,10 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Racing+Sans+One&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="./out/browser/browser.css">
 </head>
 <body>
 	<div id="root"></div>
 	<script type="module" src="./out/browser/browser.js"></script>
-	<script>
-		if ('serviceWorker' in navigator) {
-			window.addEventListener('load', () => {
-				navigator.serviceWorker.register('./sw.js').then(registration => {
-					// Always ask for a fresh worker script on page load.
-					registration.update().catch(() => {});
-
-					if (registration.waiting) {
-						registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-					}
-
-					registration.addEventListener('updatefound', () => {
-						const newWorker = registration.installing;
-						if (!newWorker) {
-							return;
-						}
-
-						newWorker.addEventListener('statechange', () => {
-							if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-								newWorker.postMessage({ type: 'SKIP_WAITING' });
-							}
-						});
-					});
-
-					let refreshing = false;
-					navigator.serviceWorker.addEventListener('controllerchange', () => {
-						if (refreshing) {
-							return;
-						}
-						refreshing = true;
-						window.location.reload();
-					});
-				}).catch(() => {});
-			});
-		}
-	</script>
 </body>
 </html>

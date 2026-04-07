@@ -1,5 +1,6 @@
 const path = require('path');
 const webpack = require('webpack');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const pkg = require('./package.json');
 
 require('dotenv').config({ path: path.join(__dirname, '.env.local') });
@@ -32,11 +33,14 @@ module.exports = (env, argv) => ({
 			},
 			{
 				test: /\.css$/,
-				use: ['style-loader', 'css-loader'],
+				use: [MiniCssExtractPlugin.loader, 'css-loader'],
 			},
 		],
 	},
 	plugins: [
+		new MiniCssExtractPlugin({
+			filename: 'browser.css',
+		}),
 		new webpack.DefinePlugin({
 			__APP_VERSION__: JSON.stringify(pkg.version),
 			__GOOGLE_SHEETS_API_KEY__: JSON.stringify(googleSheetsApiKey),

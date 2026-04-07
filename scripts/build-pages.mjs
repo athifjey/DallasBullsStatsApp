@@ -9,6 +9,7 @@ const repoRoot = resolve(__dirname, '..');
 
 const browserHtmlPath = resolve(repoRoot, 'browser.html');
 const browserBundlePath = resolve(repoRoot, 'out', 'browser', 'browser.js');
+const browserCssPath = resolve(repoRoot, 'out', 'browser', 'browser.css');
 const distDir = resolve(repoRoot, 'dist');
 const distIndexPath = resolve(distDir, 'index.html');
 const distVersionPath = resolve(distDir, 'version.json');
@@ -23,11 +24,17 @@ await mkdir(distDir, { recursive: true });
 
 const html = await readFile(browserHtmlPath, 'utf8');
 const browserBundle = await readFile(browserBundlePath);
+const browserCss = await readFile(browserCssPath);
 const bundleHash = createHash('sha256').update(browserBundle).digest('hex').slice(0, 12);
+const cssHash = createHash('sha256').update(browserCss).digest('hex').slice(0, 12);
 const versionedBundleName = `browser.${bundleHash}.js`;
+const versionedCssName = `browser.${cssHash}.css`;
 const distBundlePath = resolve(distDir, versionedBundleName);
+const distCssPath = resolve(distDir, versionedCssName);
 
-const pageHtml = html.replace('./out/browser/browser.js', `./${versionedBundleName}`);
+const pageHtml = html
+	.replace('./out/browser/browser.js', `./${versionedBundleName}`)
+	.replace('./out/browser/browser.css', `./${versionedCssName}`);
 
 const packageJson = JSON.parse(await readFile(resolve(repoRoot, 'package.json'), 'utf8'));
 const deployMessage = process.env.DEPLOY_MESSAGE?.trim() || 'A new app build is available.';
@@ -53,6 +60,7 @@ const versionMetadata = {
 
 await writeFile(distIndexPath, pageHtml, 'utf8');
 await writeFile(distBundlePath, browserBundle);
+await writeFile(distCssPath, browserCss);
 await writeFile(distVersionPath, JSON.stringify(versionMetadata, null, 2), 'utf8');
 await writeFile(noJekyllPath, '', 'utf8');
 

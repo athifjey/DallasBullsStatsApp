@@ -8,6 +8,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - No unreleased changes.
 
+## [1.0.1] - 2026-04-07
+
+- Security updates.
+- Schedule enhancements and cleanup improvements.
+
 ## [0.0.9] - 2026-04-07
 
 - Security issues fixed.

@@ -6,4 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+- No unreleased changes.
+
+## [0.0.8] - 2026-04-07
+
+- Fixed security issues! Reload to browse through a safe DallasBulls Stats app!!!
+
+## [0.0.7] - 2026-04-07
+
 - Initial release

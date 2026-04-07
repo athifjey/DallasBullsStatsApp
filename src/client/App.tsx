@@ -28,6 +28,33 @@ interface PushConfig {
 	vapidPublicKey: string;
 }
 
+const getPushSupportIssue = (): string | null => {
+	if (typeof window === 'undefined') {
+		return null;
+	}
+
+	if (!window.isSecureContext) {
+		return 'Push notifications require HTTPS.';
+	}
+
+	const userAgent = navigator.userAgent.toLowerCase();
+	const isIOS = /iphone|ipad|ipod/.test(userAgent);
+	const standaloneFromNavigator = typeof (navigator as Navigator & { standalone?: boolean }).standalone === 'boolean'
+		&& Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+	const standaloneFromMedia = typeof window.matchMedia === 'function'
+		&& window.matchMedia('(display-mode: standalone)').matches;
+
+	if (isIOS && !standaloneFromNavigator && !standaloneFromMedia) {
+		return 'On iPhone and iPad, push works only after opening this app from Safari Home Screen.';
+	}
+
+	if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+		return 'This browser does not support push notifications.';
+	}
+
+	return null;
+};
+
 const PAGE_ROUTES: Record<Page, string> = {
 	'dashboard': 'dashboard',
 	'team-stats': 'team-stats',
@@ -71,6 +98,8 @@ export const App: React.FC = () => {
 	const [activePage, setActivePage] = useState<Page>(getPageFromHash);
 	const [pushConfig, setPushConfig] = useState<PushConfig | null>(null);
 	const [isPushSubscribed, setIsPushSubscribed] = useState(false);
+	const [pushSupportIssue, setPushSupportIssue] = useState<string | null>(null);
+	const [pushBannerDismissed, setPushBannerDismissed] = useState(false);
 	const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(() => {
 		if (typeof window === 'undefined' || !('Notification' in window)) {
 			return 'default';
@@ -140,7 +169,7 @@ export const App: React.FC = () => {
 	};
 
 	const subscribeForPush = async (requestPermission: boolean): Promise<boolean> => {
-		if (!pushConfig || typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+		if (!pushConfig || typeof window === 'undefined' || pushSupportIssue || !('serviceWorker' in navigator) || !('PushManager' in window)) {
 			return false;
 		}
 
@@ -150,36 +179,44 @@ export const App: React.FC = () => {
 
 		let permission: NotificationPermission = notificationPermission;
 		if (permission !== 'granted' && requestPermission && 'Notification' in window) {
-			permission = await Notification.requestPermission();
-			setNotificationPermission(permission);
+			try {
+				permission = await Notification.requestPermission();
+				setNotificationPermission(permission);
+			} catch {
+				return false;
+			}
 		}
 
 		if (permission !== 'granted') {
 			return false;
 		}
 
-		const registration = await navigator.serviceWorker.ready;
-		let subscription = await registration.pushManager.getSubscription();
+		try {
+			const registration = await navigator.serviceWorker.ready;
+			let subscription = await registration.pushManager.getSubscription();
 
-		if (!subscription) {
-			subscription = await registration.pushManager.subscribe({
-				userVisibleOnly: true,
-				applicationServerKey: toUint8Array(pushConfig.vapidPublicKey) as unknown as BufferSource,
+			if (!subscription) {
+				subscription = await registration.pushManager.subscribe({
+					userVisibleOnly: true,
+					applicationServerKey: toUint8Array(pushConfig.vapidPublicKey) as unknown as BufferSource,
+				});
+			}
+
+			const response = await fetch(`${pushConfig.apiUrl}/api/push/subscribe`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ subscription }),
 			});
-		}
 
-		const response = await fetch(`${pushConfig.apiUrl}/api/push/subscribe`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ subscription }),
-		});
+			if (!response.ok) {
+				return false;
+			}
 
-		if (!response.ok) {
+			setIsPushSubscribed(true);
+			return true;
+		} catch {
 			return false;
 		}
-
-		setIsPushSubscribed(true);
-		return true;
 	};
 
 	const maybeNotifyForUpdate = async (metadata: VersionMetadata) => {
@@ -258,6 +295,10 @@ export const App: React.FC = () => {
 	};
 
 	useEffect(() => {
+		setPushSupportIssue(getPushSupportIssue());
+	}, []);
+
+	useEffect(() => {
 		if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
 			return;
 		}
@@ -326,24 +367,40 @@ export const App: React.FC = () => {
 
 	return (
 		<div className="app">
-			{pushConfig && !isPushSubscribed && notificationPermission !== 'denied' && (
+			{pushConfig && !isPushSubscribed && notificationPermission !== 'denied' && !pushBannerDismissed && (
 				<div className="update-banner" role="status" aria-live="polite">
 					<div className="update-banner__body">
 						<strong className="update-banner__title">Enable System Alerts</strong>
 						<span className="update-banner__text">
-							Allow notifications to receive push updates even when the app is in background.
+							{pushSupportIssue ?? 'Allow notifications to receive push updates even when the app is in background.'}
 						</span>
 					</div>
 					<div className="update-banner__actions">
-						<button
-							type="button"
-							className="update-banner__btn"
-							onClick={() => {
-								void subscribeForPush(true);
-							}}
-						>
-							Enable
-						</button>
+						{pushSupportIssue ? (
+							<button
+								type="button"
+								className="update-banner__btn update-banner__btn--ghost"
+								onClick={() => {
+									setPushBannerDismissed(true);
+								}}
+							>
+								Dismiss
+							</button>
+						) : (
+							<button
+								type="button"
+								className="update-banner__btn"
+								onClick={() => {
+									void subscribeForPush(true).then(success => {
+										if (!success) {
+											setPushSupportIssue(getPushSupportIssue() ?? 'Unable to enable notifications right now. Please try again.');
+										}
+									});
+								}}
+							>
+								Enable
+							</button>
+						)}
 					</div>
 				</div>
 			)}

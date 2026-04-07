@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { fetchSheetData, SheetRow } from '../sheetsApi';
+import { fetchScheduleData, fetchSheetData, SheetRow } from '../sheetsApi';
 import {
 	calculateBattingPoints,
 	calculateBowlingPoints,
@@ -19,6 +19,23 @@ interface ChartConfig {
 	accentClass: string;
 	valueFormatter: (value: number) => string;
 	rows: ChartRow[];
+}
+
+interface UpcomingScheduleEntry {
+	date: Date;
+	dateLabel: string;
+	team1: string;
+	team2: string;
+	venue: string;
+	time: string;
+	umpiringOne: string;
+	umpiringTwo: string;
+}
+
+interface UpcomingScheduleEvent {
+	id: string;
+	entry: UpcomingScheduleEntry;
+	isToday: boolean;
 }
 
 const parseNumber = (value: string | undefined): number | null => {
@@ -54,6 +71,87 @@ const findPlayerNameKey = (row: SheetRow | undefined): string | null => {
 		return exact;
 	}
 	return keys.find(key => key.trim().toLowerCase().includes('player')) ?? null;
+};
+
+const parseScheduleDate = (value: string | undefined): Date | null => {
+	if (!value) {
+		return null;
+	}
+
+	const trimmed = value.trim();
+	if (!trimmed) {
+		return null;
+	}
+
+	const direct = new Date(trimmed);
+	if (!Number.isNaN(direct.getTime())) {
+		return direct;
+	}
+
+	const match = trimmed.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
+	if (!match) {
+		return null;
+	}
+
+	const first = Number.parseInt(match[1], 10);
+	const second = Number.parseInt(match[2], 10);
+	const yearRaw = Number.parseInt(match[3], 10);
+	const year = yearRaw < 100 ? 2000 + yearRaw : yearRaw;
+
+	const month = second > 12 ? first : second;
+	const day = second > 12 ? second : first;
+	const parsed = new Date(year, month - 1, day);
+	return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const isDallasBulls = (value: string | undefined): boolean => {
+	return (value ?? '').trim().toLowerCase().includes('dallas bulls');
+};
+
+const startOfToday = (): Date => {
+	const now = new Date();
+	return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+};
+
+const isSameDay = (left: Date, right: Date): boolean => {
+	return left.getFullYear() === right.getFullYear()
+		&& left.getMonth() === right.getMonth()
+		&& left.getDate() === right.getDate();
+};
+
+const formatDayName = (date: Date): string => {
+	return date.toLocaleDateString('en-AU', { weekday: 'long' });
+};
+
+const toUpcomingScheduleEntry = (row: SheetRow): UpcomingScheduleEntry | null => {
+	const dateKey = findColumnKey(row, ['Date']);
+	const team1Key = findColumnKey(row, ['Team 1', 'Team1']);
+	const team2Key = findColumnKey(row, ['Team 2', 'Team2']);
+	const umpiringOneKey = findColumnKey(row, ['Umpiring 1', 'Umpiring1']);
+	const umpiringTwoKey = findColumnKey(row, ['Umpiring 2', 'Umpiring2']);
+	const venueKey = findColumnKey(row, ['Venue']);
+	const timeKey = findColumnKey(row, ['Time']);
+
+	if (!dateKey || !team1Key || !team2Key) {
+		return null;
+	}
+
+	const dateLabel = row[dateKey] ?? '';
+	const date = parseScheduleDate(dateLabel);
+	if (!date) {
+		return null;
+	}
+
+	return {
+		date,
+		dateLabel,
+		team1: row[team1Key] ?? '',
+		team2: row[team2Key] ?? '',
+		venue: venueKey ? row[venueKey] ?? '' : '',
+		time: timeKey ? row[timeKey] ?? '' : '',
+		umpiringOne: umpiringOneKey ? row[umpiringOneKey] ?? '' : '',
+		umpiringTwo: umpiringTwoKey ? row[umpiringTwoKey] ?? '' : '',
+	};
 };
 
 const topN = (
@@ -191,6 +289,7 @@ export const DashboardPage: React.FC = () => {
 	const [bowlingRows, setBowlingRows] = useState<SheetRow[]>([]);
 	const [battingHistoryRows, setBattingHistoryRows] = useState<SheetRow[]>([]);
 	const [bowlingHistoryRows, setBowlingHistoryRows] = useState<SheetRow[]>([]);
+	const [scheduleRows, setScheduleRows] = useState<SheetRow[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -202,12 +301,14 @@ export const DashboardPage: React.FC = () => {
 			fetchSheetData('Bowling Summary'),
 			fetchSheetData('Batting History'),
 			fetchSheetData('Bowling History'),
+			fetchScheduleData('Schedule').catch(() => []),
 		])
-			.then(([battingData, bowlingData, battingHistoryData, bowlingHistoryData]) => {
+			.then(([battingData, bowlingData, battingHistoryData, bowlingHistoryData, scheduleData]) => {
 				setBattingRows(battingData);
 				setBowlingRows(bowlingData);
 				setBattingHistoryRows(battingHistoryData);
 				setBowlingHistoryRows(bowlingHistoryData);
+				setScheduleRows(scheduleData);
 				setLoading(false);
 			})
 			.catch((err: Error) => {
@@ -258,6 +359,36 @@ export const DashboardPage: React.FC = () => {
 		};
 	}, [battingRows, bowlingRows, battingHistoryRows, bowlingHistoryRows]);
 
+	const nextMatchEvents = useMemo((): UpcomingScheduleEvent[] => {
+		const today = startOfToday();
+		return scheduleRows
+			.map(toUpcomingScheduleEntry)
+			.filter((entry): entry is UpcomingScheduleEntry => entry !== null)
+			.filter(entry => entry.date >= today && (isDallasBulls(entry.team1) || isDallasBulls(entry.team2)))
+			.sort((a, b) => a.date.getTime() - b.date.getTime())
+			.slice(0, 3)
+			.map((entry, index) => ({
+				id: `match-${entry.date.getTime()}-${index}`,
+				entry,
+				isToday: isSameDay(entry.date, today),
+			}));
+	}, [scheduleRows]);
+
+	const nextUmpiringEvents = useMemo((): UpcomingScheduleEvent[] => {
+		const today = startOfToday();
+		return scheduleRows
+			.map(toUpcomingScheduleEntry)
+			.filter((entry): entry is UpcomingScheduleEntry => entry !== null)
+			.filter(entry => entry.date >= today && (isDallasBulls(entry.umpiringOne) || isDallasBulls(entry.umpiringTwo)))
+			.sort((a, b) => a.date.getTime() - b.date.getTime())
+			.slice(0, 3)
+			.map((entry, index) => ({
+				id: `umpiring-${entry.date.getTime()}-${index}`,
+				entry,
+				isToday: isSameDay(entry.date, today),
+			}));
+	}, [scheduleRows]);
+
 	return (
 		<div className="page dashboard-page">
 			<div className="dashboard-bg">
@@ -302,6 +433,54 @@ export const DashboardPage: React.FC = () => {
 
 			{!loading && !error && (
 				<>
+					<div className="dashboard-schedule-row">
+					<section className="dashboard-schedule-widget" aria-label="Next 3 Dallas Bulls matches">
+						<h3 className="dashboard-schedule-widget__title">
+							<span className="dashboard-schedule-banner__pill">Match</span>
+							Next 3 Matches
+						</h3>
+						<div className="dashboard-schedule-banner__list">
+							{nextMatchEvents.length > 0 ? (
+								nextMatchEvents.map(event => (
+									<article key={event.id} className="dashboard-schedule-banner__event">
+										<div className="dashboard-schedule-banner__event-head">
+											<span className="dashboard-schedule-banner__pill">Match</span>
+											{event.isToday && <span className="dashboard-schedule-banner__today">Today</span>}
+										</div>
+										<p className="dashboard-schedule-banner__line">{formatDayName(event.entry.date)}, {event.entry.dateLabel} | {event.entry.time || 'Time TBA'}</p>
+										<p className="dashboard-schedule-banner__line dashboard-schedule-banner__line--strong">{event.entry.team1} vs {event.entry.team2}</p>
+										<p className="dashboard-schedule-banner__line">{event.entry.venue || 'Venue TBA'}</p>
+									</article>
+								))
+							) : (
+								<p className="dashboard-schedule-banner__line">No upcoming Dallas Bulls matches found.</p>
+							)}
+						</div>
+					</section>
+					<section className="dashboard-schedule-widget" aria-label="Next 3 Dallas Bulls umpiring duties">
+						<h3 className="dashboard-schedule-widget__title">
+							<span className="dashboard-schedule-banner__pill dashboard-schedule-banner__pill--umpiring">Umpiring</span>
+							Next 3 Umpiring Duties
+						</h3>
+						<div className="dashboard-schedule-banner__list">
+							{nextUmpiringEvents.length > 0 ? (
+								nextUmpiringEvents.map(event => (
+									<article key={event.id} className="dashboard-schedule-banner__event">
+										<div className="dashboard-schedule-banner__event-head">
+											<span className="dashboard-schedule-banner__pill dashboard-schedule-banner__pill--umpiring">Umpiring</span>
+											{event.isToday && <span className="dashboard-schedule-banner__today">Today</span>}
+										</div>
+										<p className="dashboard-schedule-banner__line">{formatDayName(event.entry.date)}, {event.entry.dateLabel} | {event.entry.time || 'Time TBA'}</p>
+										<p className="dashboard-schedule-banner__line dashboard-schedule-banner__line--strong">{event.entry.team1} vs {event.entry.team2}</p>
+										<p className="dashboard-schedule-banner__line">{event.entry.venue || 'Venue TBA'}</p>
+									</article>
+								))
+							) : (
+								<p className="dashboard-schedule-banner__line">No upcoming Dallas Bulls umpiring duties found.</p>
+							)}
+						</div>
+					</section>
+				</div>
 					<div className="dashboard-grid">
 						<ChartCard
 							title="Top 5 Wicket Takers (min 10 matches)"

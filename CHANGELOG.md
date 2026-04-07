@@ -8,6 +8,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 - No unreleased changes.
 
+## [0.0.9] - 2026-04-07
+
+- Security issues fixed.
+- Added schedule widgets for next 3 matches and next 3 umpiring duties.
+
 ## [0.0.8] - 2026-04-07
 
 - Fixed security issues! Reload to browse through a safe DallasBulls Stats app!!!

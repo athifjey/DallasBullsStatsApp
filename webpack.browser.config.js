@@ -2,6 +2,10 @@ const path = require('path');
 const webpack = require('webpack');
 const pkg = require('./package.json');
 
+require('dotenv').config({ path: path.join(__dirname, '.env.local') });
+
+const googleSheetsApiKey = process.env.GOOGLE_SHEETS_API_KEY || '';
+
 module.exports = (env, argv) => ({
 	mode: argv.mode || 'development',
 	devtool: argv.mode === 'production' ? false : 'inline-source-map',
@@ -35,6 +39,7 @@ module.exports = (env, argv) => ({
 	plugins: [
 		new webpack.DefinePlugin({
 			__APP_VERSION__: JSON.stringify(pkg.version),
+			__GOOGLE_SHEETS_API_KEY__: JSON.stringify(googleSheetsApiKey),
 		}),
 	],
 });

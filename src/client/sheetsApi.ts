@@ -1,4 +1,4 @@
-const API_KEY = 'AIzaSyD7ndAm7KSgX-d2kKsA3rbKUMthmvzqkBg';
+const API_KEY = __GOOGLE_SHEETS_API_KEY__;
 const SHEET_ID = '1-Sr-asp18tOwusTrs7AksPOwAdI8UfHFYrgong7T1NA';
 
 export interface SheetRow {
@@ -6,6 +6,10 @@ export interface SheetRow {
 }
 
 export async function fetchSheetData(range = 'Batting Summary'): Promise<SheetRow[]> {
+	if (!API_KEY) {
+		throw new Error('Google Sheets API key is not configured for this build.');
+	}
+
 	const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
 
 	const response = await fetch(url);

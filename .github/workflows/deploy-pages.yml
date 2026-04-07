@@ -41,6 +41,7 @@ jobs:
           DEPLOY_MESSAGE: ${{ github.event.inputs.deploy_message || github.event.head_commit.message || 'A new app build is available.' }}
           PUSH_API_URL: ${{ secrets.PUSH_API_URL }}
           PUSH_VAPID_PUBLIC_KEY: ${{ secrets.PUSH_VAPID_PUBLIC_KEY }}
+          GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
         run: npm run build:pages
 
       - name: Upload artifact

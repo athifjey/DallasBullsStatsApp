@@ -4,9 +4,10 @@ import webpush from 'web-push';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
+import helmet from 'helmet';
 
 const PORT = Number(process.env.PORT || 8787);
-const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '';
 const ADMIN_TOKEN = process.env.PUSH_ADMIN_TOKEN || '';
 const ADMIN_PAGE_PASSWORD = process.env.ADMIN_PAGE_PASSWORD || '';
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@example.com';
@@ -15,7 +16,14 @@ const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
 const STORE_PATH = process.env.PUSH_SUBSCRIPTIONS_FILE
   || path.resolve(process.cwd(), 'subscriptions.json');
 const ADMIN_SESSION_TTL_MS = 15 * 60 * 1000;
+const MAX_SUBSCRIPTIONS = Number(process.env.MAX_SUBSCRIPTIONS || 5000);
+const AUTH_WINDOW_MS = 10 * 60 * 1000;
+const AUTH_MAX_REQUESTS = Number(process.env.AUTH_MAX_REQUESTS || 10);
+const SEND_WINDOW_MS = 60 * 1000;
+const SEND_MAX_REQUESTS = Number(process.env.SEND_MAX_REQUESTS || 20);
 const adminSessions = new Map();
+const authAttemptBuckets = new Map();
+const sendAttemptBuckets = new Map();
 
 if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
   throw new Error('Missing VAPID_PUBLIC_KEY or VAPID_PRIVATE_KEY');
@@ -31,10 +39,96 @@ const allowedOrigins = CORS_ORIGIN
   .filter(Boolean);
 
 const isWildcardCors = allowedOrigins.includes('*');
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction && !allowedOrigins.length) {
+  throw new Error('CORS_ORIGIN must be explicitly configured in production.');
+}
+
+app.disable('x-powered-by');
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+
+const getIp = req => (req.ip || req.socket?.remoteAddress || 'unknown').toString();
+
+const isRateLimited = (bucket, key, windowMs, maxRequests) => {
+  const now = Date.now();
+  const previous = bucket.get(key);
+
+  if (!previous || previous.expiresAt <= now) {
+    bucket.set(key, { count: 1, expiresAt: now + windowMs });
+    return false;
+  }
+
+  previous.count += 1;
+  if (previous.count > maxRequests) {
+    return true;
+  }
+
+  return false;
+};
+
+const normalizeNotificationUrl = value => {
+  if (typeof value !== 'string' || !value.trim()) {
+    return './index.html';
+  }
+
+  const candidate = value.trim();
+  if (candidate.startsWith('/')) {
+    return candidate;
+  }
+
+  if (candidate.startsWith('./')) {
+    return candidate;
+  }
+
+  return './index.html';
+};
+
+const isValidSubscription = subscription => {
+  if (!subscription || typeof subscription !== 'object') {
+    return false;
+  }
+
+  const endpoint = subscription.endpoint;
+  const keys = subscription.keys;
+
+  if (typeof endpoint !== 'string' || endpoint.length > 2048) {
+    return false;
+  }
+
+  if (!endpoint.startsWith('https://')) {
+    return false;
+  }
+
+  if (!keys || typeof keys !== 'object') {
+    return false;
+  }
+
+  if (typeof keys.auth !== 'string' || typeof keys.p256dh !== 'string') {
+    return false;
+  }
+
+  return keys.auth.length <= 256 && keys.p256dh.length <= 256;
+};
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || isWildcardCors || allowedOrigins.includes(origin)) {
+    // Allow same-origin or non-browser requests without Origin header.
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    // Keep wildcard permissive behavior available for local development only.
+    if (!isProduction && isWildcardCors) {
+      callback(null, true);
+      return;
+    }
+
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
       return;
     }
@@ -85,6 +179,27 @@ const requireAdminSession = (req, res, next) => {
   if (!expiresAt || expiresAt < Date.now()) {
     adminSessions.delete(token);
     res.status(401).json({ error: 'Admin session expired' });
+    return;
+  }
+
+  next();
+};
+
+const authRateLimit = (req, res, next) => {
+  const ip = getIp(req);
+  if (isRateLimited(authAttemptBuckets, ip, AUTH_WINDOW_MS, AUTH_MAX_REQUESTS)) {
+    res.status(429).json({ error: 'Too many auth attempts. Try again later.' });
+    return;
+  }
+
+  next();
+};
+
+const sendRateLimit = (req, res, next) => {
+  const sessionToken = (req.headers['x-admin-session'] || '').toString();
+  const key = sessionToken || getIp(req);
+  if (isRateLimited(sendAttemptBuckets, key, SEND_WINDOW_MS, SEND_MAX_REQUESTS)) {
+    res.status(429).json({ error: 'Too many send attempts. Slow down and retry.' });
     return;
   }
 
@@ -147,13 +262,19 @@ app.get('/api/push/public-config', (_req, res) => {
 
 app.post('/api/push/subscribe', async (req, res) => {
   const { subscription } = req.body || {};
-  if (!subscription || !subscription.endpoint) {
+  if (!isValidSubscription(subscription)) {
     res.status(400).json({ error: 'Invalid subscription payload' });
     return;
   }
 
   const subs = await readSubscriptions();
   const deduped = subs.filter(item => item.endpoint !== subscription.endpoint);
+
+  if (deduped.length >= MAX_SUBSCRIPTIONS) {
+    res.status(429).json({ error: 'Subscription limit reached' });
+    return;
+  }
+
   deduped.push(subscription);
   await writeSubscriptions(deduped);
 
@@ -173,7 +294,7 @@ app.post('/api/push/unsubscribe', async (req, res) => {
   res.json({ ok: true, count: updated.length });
 });
 
-app.post('/api/admin/auth', (req, res) => {
+app.post('/api/admin/auth', authRateLimit, (req, res) => {
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
   if (!passwordMatches(password)) {
     res.status(401).json({ error: 'Invalid password' });
@@ -185,11 +306,11 @@ app.post('/api/admin/auth', (req, res) => {
   res.json({ ok: true, sessionToken: token, expiresInMs: ADMIN_SESSION_TTL_MS });
 });
 
-app.post('/api/admin/send-system', requireAdminSession, async (req, res) => {
+app.post('/api/admin/send-system', requireAdminSession, sendRateLimit, async (req, res) => {
   const payload = {
     title: 'Dallas Bulls System Notification',
     body: typeof req.body?.body === 'string' ? req.body.body : 'System update from Dallas Bulls Stats.',
-    url: typeof req.body?.url === 'string' ? req.body.url : './index.html',
+    url: normalizeNotificationUrl(req.body?.url),
     tag: 'system-notification',
   };
 
@@ -197,11 +318,11 @@ app.post('/api/admin/send-system', requireAdminSession, async (req, res) => {
   res.json({ ok: true, ...result });
 });
 
-app.post('/api/admin/send-push', requireAdminSession, async (req, res) => {
+app.post('/api/admin/send-push', requireAdminSession, sendRateLimit, async (req, res) => {
   const payload = {
     title: 'Dallas Bulls Push Notification',
     body: typeof req.body?.body === 'string' ? req.body.body : 'Push update from Dallas Bulls Stats.',
-    url: typeof req.body?.url === 'string' ? req.body.url : './index.html',
+    url: normalizeNotificationUrl(req.body?.url),
     tag: 'push-notification',
   };
 
@@ -213,7 +334,7 @@ app.post('/api/push/send', requireAdminToken, async (req, res) => {
   const payload = {
     title: typeof req.body?.title === 'string' ? req.body.title : 'Dallas Bulls Stats',
     body: typeof req.body?.body === 'string' ? req.body.body : 'A new app update is available.',
-    url: typeof req.body?.url === 'string' ? req.body.url : './index.html',
+    url: normalizeNotificationUrl(req.body?.url),
     tag: typeof req.body?.tag === 'string' ? req.body.tag : 'dallas-bulls-push',
   };
 

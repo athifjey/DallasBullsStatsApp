@@ -1,8 +1,11 @@
 const { DefinePlugin } = require('webpack');
 const path = require('path');
 
+require('dotenv').config({ path: path.join(__dirname, '.env.local') });
+
 const outputFilename = 'index.js';
 const devServerPort = 8111;
+const googleSheetsApiKey = process.env.GOOGLE_SHEETS_API_KEY || '';
 
 module.exports = (env, argv) => ({
   mode: argv.mode,
@@ -67,6 +70,7 @@ module.exports = (env, argv) => ({
         path.posix.relative(path.posix.dirname(`/${outputFilename}`), '/'),
       ),
       scriptUrl: 'import.meta.url',
+      __GOOGLE_SHEETS_API_KEY__: JSON.stringify(googleSheetsApiKey),
     }),
   ],
 });

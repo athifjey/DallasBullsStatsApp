@@ -62,12 +62,13 @@ const swTemplate = await readFile(swSrc, 'utf8');
 const swContent = swTemplate.replace('__APP_VERSION__', bundleHash);
 await writeFile(resolve(distDir, 'sw.js'), swContent, 'utf8');
 
-// Copy assets folder (images, etc.)
+// Copy assets folder (images, etc.) — files only, skip subdirectories
 try {
-	const files = await readdir(assetsDir);
+	const entries = await readdir(assetsDir, { withFileTypes: true });
+	const files = entries.filter(e => e.isFile());
 	await mkdir(distAssetsDir, { recursive: true });
 	for (const file of files) {
-		await copyFile(resolve(assetsDir, file), resolve(distAssetsDir, file));
+		await copyFile(resolve(assetsDir, file.name), resolve(distAssetsDir, file.name));
 	}
 	console.log(`Copied ${files.length} asset(s) to dist/assets/`);
 } catch {

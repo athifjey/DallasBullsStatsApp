@@ -107,18 +107,30 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
 
-  const targetUrl = (event.notification.data && event.notification.data.url) || './index.html';
+  const rawUrl = (event.notification.data && event.notification.data.url) || './index.html';
+  const normalizedTargetUrl = (() => {
+    try {
+      const parsed = new URL(rawUrl, self.location.origin);
+      if (parsed.origin !== self.location.origin) {
+        return './index.html';
+      }
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+      return './index.html';
+    }
+  })();
+
   event.waitUntil((async () => {
     const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const client of allClients) {
       if ('focus' in client) {
-        client.navigate(targetUrl);
+        client.navigate(normalizedTargetUrl);
         return client.focus();
       }
     }
 
     if (clients.openWindow) {
-      return clients.openWindow(targetUrl);
+      return clients.openWindow(normalizedTargetUrl);
     }
     return null;
   })());

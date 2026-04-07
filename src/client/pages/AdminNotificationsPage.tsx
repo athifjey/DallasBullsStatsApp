@@ -6,10 +6,36 @@ interface VersionMetadata {
 
 const DEFAULT_DEEP_LINK = 'https://athifjey.github.io/DallasBullsStatsApp/#/dashboard';
 
+const getFallbackPushApiUrl = (): string | null => {
+	if (typeof __PUSH_API_URL__ === 'string' && __PUSH_API_URL__.trim()) {
+		return __PUSH_API_URL__.trim().replace(/\/$/, '');
+	}
+
+	if (typeof window !== 'undefined') {
+		const host = window.location.hostname;
+		if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+			return 'http://localhost:8787';
+		}
+	}
+
+	return null;
+};
+
+const isLocalBrowserMode = (): boolean => {
+	if (typeof window === 'undefined') {
+		return false;
+	}
+
+	const host = window.location.hostname;
+	const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+	return isLocalHost && window.location.pathname.endsWith('/browser.html');
+};
+
 export const AdminNotificationsPage: React.FC = () => {
 	const [pushApiUrl, setPushApiUrl] = useState<string | null>(null);
 	const [password, setPassword] = useState('');
 	const [sessionToken, setSessionToken] = useState<string | null>(null);
+	const [isAuthenticating, setIsAuthenticating] = useState(false);
 	const [authError, setAuthError] = useState<string | null>(null);
 	const [systemMessage, setSystemMessage] = useState('');
 	const [pushMessage, setPushMessage] = useState('');
@@ -18,15 +44,24 @@ export const AdminNotificationsPage: React.FC = () => {
 	const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
 	useEffect(() => {
+		const fallbackPushApiUrl = getFallbackPushApiUrl();
+		if (isLocalBrowserMode()) {
+			setPushApiUrl(fallbackPushApiUrl);
+			return;
+		}
+
 		fetch(`./version.json?t=${Date.now()}`, { cache: 'no-store' })
 			.then(response => response.json())
 			.then((metadata: VersionMetadata) => {
 				if (typeof metadata.pushApiUrl === 'string' && metadata.pushApiUrl.trim()) {
 					setPushApiUrl(metadata.pushApiUrl.replace(/\/$/, ''));
+					return;
 				}
+
+				setPushApiUrl(fallbackPushApiUrl);
 			})
 			.catch(() => {
-				setPushApiUrl(null);
+				setPushApiUrl(fallbackPushApiUrl);
 			});
 	}, []);
 
@@ -36,32 +71,46 @@ export const AdminNotificationsPage: React.FC = () => {
 			return;
 		}
 
+		if (!password.trim()) {
+			setAuthError('Enter admin password.');
+			return;
+		}
+
 		setAuthError(null);
 		setStatusMessage(null);
+		setIsAuthenticating(true);
 
-		const response = await fetch(`${pushApiUrl}/api/admin/auth`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ password }),
-		});
+		try {
+			const response = await fetch(`${pushApiUrl}/api/admin/auth`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ password }),
+			});
 
-		if (!response.ok) {
+			const payload = await response.json().catch(() => null) as { sessionToken?: string; error?: string } | null;
+
+			if (!response.ok) {
+				setSessionToken(null);
+				setAuthError(payload?.error ?? 'Invalid admin password.');
+				return;
+			}
+
+			if (!payload?.sessionToken) {
+				setSessionToken(null);
+				setAuthError('Authentication failed.');
+				return;
+			}
+
+			setSessionToken(payload.sessionToken);
+			setPassword('');
+			setAuthError(null);
+			setStatusMessage('Admin authentication successful.');
+		} catch {
 			setSessionToken(null);
-			setAuthError('Invalid admin password.');
-			return;
+			setAuthError('Unable to authenticate right now. Check network/server and try again.');
+		} finally {
+			setIsAuthenticating(false);
 		}
-
-		const json = await response.json() as { sessionToken?: string };
-		if (!json.sessionToken) {
-			setSessionToken(null);
-			setAuthError('Authentication failed.');
-			return;
-		}
-
-		setSessionToken(json.sessionToken);
-		setPassword('');
-		setAuthError(null);
-		setStatusMessage('Admin authentication successful.');
 	};
 
 	const sendNotification = async (mode: 'system' | 'push', body: string) => {
@@ -130,30 +179,39 @@ export const AdminNotificationsPage: React.FC = () => {
 
 			{!pushApiUrl && (
 				<div className="page__state page__state--error">
-					Push API URL is missing in deployment metadata.
+					Push API URL is missing. Set PUSH_API_URL in .env.local or version metadata.
 				</div>
 			)}
 
 			{pushApiUrl && !sessionToken && (
 				<div className="admin-panel">
 					<label className="admin-panel__label" htmlFor="admin-password">Admin Password</label>
-					<input
-						id="admin-password"
-						type="password"
-						className="admin-panel__input"
-						value={password}
-						onChange={event => setPassword(event.target.value)}
-						placeholder="Enter admin password"
-					/>
-					<button
-						type="button"
-						className="admin-panel__btn"
-						onClick={() => {
-							void authenticate();
-						}}
-					>
-						Authenticate
-					</button>
+					<div className="admin-panel__auth-controls">
+						<input
+							id="admin-password"
+							type="password"
+							className="admin-panel__input"
+							value={password}
+							onChange={event => setPassword(event.target.value)}
+							placeholder="Enter admin password"
+							onKeyDown={event => {
+								if (event.key === 'Enter' && !isAuthenticating) {
+									void authenticate();
+								}
+							}}
+						/>
+						<button
+							type="button"
+							className="admin-panel__btn"
+							disabled={!password.trim() || isAuthenticating}
+							onClick={() => {
+								void authenticate();
+							}}
+						>
+							{isAuthenticating && <span className="admin-panel__loader" aria-hidden="true" />}
+							{isAuthenticating ? 'Authenticating...' : 'Authenticate'}
+						</button>
+					</div>
 					{authError && <p className="admin-panel__error">{authError}</p>}
 				</div>
 			)}

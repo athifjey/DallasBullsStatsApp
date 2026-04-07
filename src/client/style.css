@@ -265,6 +265,8 @@
 	border: 1px solid #dbe6df;
 	border-radius: 12px;
 	background: #ffffff;
+	max-width: 780px;
+	margin-inline: auto;
 }
 
 .admin-panel__label {
@@ -273,9 +275,17 @@
 	color: #123a2a;
 }
 
+.admin-panel__auth-controls {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 0.7rem;
+	align-items: center;
+}
+
 .admin-panel__input,
 .admin-panel__textarea {
 	width: 100%;
+	box-sizing: border-box;
 	padding: 0.7rem 0.8rem;
 	border: 1px solid #c9d9cf;
 	border-radius: 8px;
@@ -289,6 +299,10 @@
 }
 
 .admin-panel__btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.45rem;
 	justify-self: start;
 	padding: 0.6rem 1rem;
 	border: 0;
@@ -323,12 +337,29 @@
 	margin: 0;
 	color: #b42318;
 	font-weight: 600;
+	word-break: break-word;
 }
 
 .admin-panel__status {
 	margin: 0;
 	color: #0c3f2b;
 	font-weight: 600;
+	word-break: break-word;
+}
+
+.admin-panel__loader {
+	width: 0.95rem;
+	height: 0.95rem;
+	border-radius: 999px;
+	border: 2px solid rgba(255, 255, 255, 0.45);
+	border-top-color: #ffffff;
+	animation: admin-loader-spin 0.8s linear infinite;
+}
+
+@keyframes admin-loader-spin {
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 .app-header__menu-btn:hover {
@@ -498,6 +529,19 @@
 
 	.update-banner__text {
 		white-space: normal;
+	}
+
+	.admin-panel {
+		padding: 0.9rem;
+	}
+
+	.admin-panel__auth-controls {
+		grid-template-columns: 1fr;
+	}
+
+	.admin-panel__btn {
+		justify-self: stretch;
+		width: 100%;
 	}
 }
 

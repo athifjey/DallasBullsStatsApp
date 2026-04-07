@@ -6,6 +6,7 @@ const pkg = require('./package.json');
 require('dotenv').config({ path: path.join(__dirname, '.env.local') });
 
 const googleSheetsApiKey = process.env.GOOGLE_SHEETS_API_KEY || '';
+const pushApiUrl = process.env.PUSH_API_URL || '';
 
 module.exports = (env, argv) => ({
 	mode: argv.mode || 'development',
@@ -44,6 +45,7 @@ module.exports = (env, argv) => ({
 		new webpack.DefinePlugin({
 			__APP_VERSION__: JSON.stringify(pkg.version),
 			__GOOGLE_SHEETS_API_KEY__: JSON.stringify(googleSheetsApiKey),
+			__PUSH_API_URL__: JSON.stringify(pushApiUrl),
 		}),
 	],
 });

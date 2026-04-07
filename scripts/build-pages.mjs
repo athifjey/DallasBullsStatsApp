@@ -40,6 +40,29 @@ const packageJson = JSON.parse(await readFile(resolve(repoRoot, 'package.json'),
 const deployMessage = process.env.DEPLOY_MESSAGE?.trim() || 'A new app build is available.';
 const pushApiUrl = process.env.PUSH_API_URL?.trim() || '';
 const pushVapidPublicKey = process.env.PUSH_VAPID_PUBLIC_KEY?.trim() || '';
+const pushApiOrigin = (() => {
+	if (!pushApiUrl) {
+		return '';
+	}
+
+	try {
+		return new URL(pushApiUrl).origin;
+	} catch {
+		return '';
+	}
+})();
+
+const connectSrcForPages = [
+	"'self'",
+	'https://sheets.googleapis.com',
+	'https://*.googleapis.com',
+	...(pushApiOrigin ? [pushApiOrigin] : []),
+].join(' ');
+
+const pageHtmlWithPagesCsp = pageHtml.replace(
+	/connect-src[^;]*;/,
+	`connect-src ${connectSrcForPages};`,
+);
 const gitSha = process.env.GITHUB_SHA?.trim() || (() => {
 	try {
 		return execSync('git rev-parse --short HEAD', { cwd: repoRoot, stdio: ['ignore', 'pipe', 'ignore'] }).toString('utf8').trim();
@@ -58,7 +81,7 @@ const versionMetadata = {
 	...(pushVapidPublicKey ? { pushVapidPublicKey } : {}),
 };
 
-await writeFile(distIndexPath, pageHtml, 'utf8');
+await writeFile(distIndexPath, pageHtmlWithPagesCsp, 'utf8');
 await writeFile(distBundlePath, browserBundle);
 await writeFile(distCssPath, browserCss);
 await writeFile(distVersionPath, JSON.stringify(versionMetadata, null, 2), 'utf8');

@@ -94,6 +94,16 @@ const PAGE_MAP: Record<Page, React.FC> = {
 	'admin-notifications': AdminNotificationsPage,
 };
 
+const isLocalBrowserMode = (): boolean => {
+	if (typeof window === 'undefined') {
+		return false;
+	}
+
+	const host = window.location.hostname;
+	const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+	return isLocalHost && window.location.pathname.endsWith('/browser.html');
+};
+
 export const App: React.FC = () => {
 	const [activePage, setActivePage] = useState<Page>(getPageFromHash);
 	const [pushConfig, setPushConfig] = useState<PushConfig | null>(null);
@@ -261,6 +271,10 @@ export const App: React.FC = () => {
 	};
 
 	const checkForVersionUpdate = async () => {
+		if (isLocalBrowserMode()) {
+			return;
+		}
+
 		try {
 			const response = await fetch(`./version.json?t=${Date.now()}`, { cache: 'no-store' });
 			if (!response.ok) {

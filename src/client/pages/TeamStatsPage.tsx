@@ -95,6 +95,19 @@ const normalizeDateKey = (value: string | undefined): string | null => {
 	return new Date(timestamp).toISOString().slice(0, 10);
 };
 
+const getTodayDateKey = (): string => {
+	const now = new Date();
+	const year = now.getFullYear();
+	const month = String(now.getMonth() + 1).padStart(2, '0');
+	const day = String(now.getDate()).padStart(2, '0');
+	return `${year}-${month}-${day}`;
+};
+
+const isTbdResult = (value: string | undefined): boolean => {
+	const normalized = (value ?? '').trim().toLowerCase();
+	return normalized === 'tbd' || normalized === 'to be decided';
+};
+
 const findPlayerNameKeyFromRow = (row: SheetRow | undefined): string | null => {
 	if (!row) {
 		return null;
@@ -367,8 +380,11 @@ export const TeamStatsPage: React.FC = () => {
 	}, [rows]);
 
 	const pastMatches = useMemo(() => {
-		const now = Date.now();
-		return matches.filter(match => parseDateValue(match.date) <= now);
+		const todayDateKey = getTodayDateKey();
+		return matches.filter(match => {
+			const matchDateKey = normalizeDateKey(match.date);
+			return matchDateKey !== null && matchDateKey <= todayDateKey;
+		});
 	}, [matches]);
 
 	const summary = useMemo(() => {
@@ -467,8 +483,14 @@ export const TeamStatsPage: React.FC = () => {
 
 	const filteredMatches = useMemo(() => {
 		const normalizedQuery = searchQuery.trim().toLowerCase();
+		const todayDateKey = getTodayDateKey();
 
 		return pastMatches.filter(match => {
+			const matchDateKey = normalizeDateKey(match.date);
+			if (matchDateKey === todayDateKey && isTbdResult(match.winnerResult)) {
+				return false;
+			}
+
 			const matchesOutcome = outcomeFilter === 'All' || match.outcome === outcomeFilter;
 			if (!matchesOutcome) {
 				return false;

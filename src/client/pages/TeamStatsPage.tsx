@@ -366,16 +366,21 @@ export const TeamStatsPage: React.FC = () => {
 			.sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date));
 	}, [rows]);
 
+	const pastMatches = useMemo(() => {
+		const now = Date.now();
+		return matches.filter(match => parseDateValue(match.date) <= now);
+	}, [matches]);
+
 	const summary = useMemo(() => {
-		const record = getRecordBreakdown(matches);
+		const record = getRecordBreakdown(pastMatches);
 		const decidedMatches = record.wins + record.losses;
 		const winRate = decidedMatches > 0 ? (record.wins / decidedMatches) * 100 : 0;
-		const recentForm = getRecentForm(matches);
-		const opponentGroups = groupBy(matches, match => match.opponent);
-		const groundGroups = groupBy(matches, match => match.ground);
+		const recentForm = getRecentForm(pastMatches);
+		const opponentGroups = groupBy(pastMatches, match => match.opponent);
+		const groundGroups = groupBy(pastMatches, match => match.ground);
 		const topOpponent = opponentGroups[0] ?? null;
 		const topGround = groundGroups[0] ?? null;
-		const latestMatch = matches[0] ?? null;
+		const latestMatch = pastMatches[0] ?? null;
 		const latestMatchContext = latestMatch
 			? `${formatDate(latestMatch.date)} vs ${latestMatch.opponent}`
 			: null;
@@ -443,7 +448,7 @@ export const TeamStatsPage: React.FC = () => {
 		}
 
 		return {
-			totalFixtures: matches.length,
+			totalFixtures: pastMatches.length,
 			record,
 			decidedMatches,
 			winRate,
@@ -458,12 +463,12 @@ export const TeamStatsPage: React.FC = () => {
 			latestMatchTopBowler,
 			latestMatchTopAllRounder,
 		};
-	}, [matches, battingHistoryRows, bowlingHistoryRows]);
+	}, [pastMatches, battingHistoryRows, bowlingHistoryRows]);
 
 	const filteredMatches = useMemo(() => {
 		const normalizedQuery = searchQuery.trim().toLowerCase();
 
-		return matches.filter(match => {
+		return pastMatches.filter(match => {
 			const matchesOutcome = outcomeFilter === 'All' || match.outcome === outcomeFilter;
 			if (!matchesOutcome) {
 				return false;
@@ -476,7 +481,7 @@ export const TeamStatsPage: React.FC = () => {
 			return [match.opponent, match.ground, match.message, match.winnerResult]
 				.some(value => value.toLowerCase().includes(normalizedQuery));
 		});
-	}, [matches, outcomeFilter, searchQuery]);
+	}, [pastMatches, outcomeFilter, searchQuery]);
 
 	const sortedMatches = useMemo(() => {
 		return [...filteredMatches].sort((left, right) => compareMatches(left, right, sortKey, sortDir));
@@ -515,11 +520,11 @@ export const TeamStatsPage: React.FC = () => {
 
 			{error && <div className="page__state page__state--error">{error}</div>}
 
-			{!loading && !error && matches.length === 0 && (
+			{!loading && !error && pastMatches.length === 0 && (
 				<div className="page__state">No Dallas Bulls fixtures were found in the Team stats sheet.</div>
 			)}
 
-			{!loading && !error && matches.length > 0 && (
+			{!loading && !error && pastMatches.length > 0 && (
 				<>
 					<section className="team-stats-summary" aria-label="Team summary">
 						<div className="team-stats-summary__card team-stats-summary__card--record">
@@ -677,7 +682,7 @@ export const TeamStatsPage: React.FC = () => {
 								</button>
 							))}
 						</div>
-						<div className="player-search-meta">Showing {sortedMatches.length} of {matches.length} fixtures</div>
+						<div className="player-search-meta">Showing {sortedMatches.length} of {pastMatches.length} past fixtures</div>
 					</div>
 
 					<div className="table-wrapper">

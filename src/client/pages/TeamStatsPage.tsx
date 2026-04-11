@@ -396,7 +396,7 @@ export const TeamStatsPage: React.FC = () => {
 		const groundGroups = groupBy(pastMatches, match => match.ground);
 		const topOpponent = opponentGroups[0] ?? null;
 		const topGround = groundGroups[0] ?? null;
-		const latestMatch = pastMatches[0] ?? null;
+		const latestMatch = pastMatches.find(match => !isTbdResult(match.winnerResult)) ?? null;
 		const latestMatchContext = latestMatch
 			? `${formatDate(latestMatch.date)} vs ${latestMatch.opponent}`
 			: null;

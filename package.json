@@ -2,7 +2,7 @@
 	"name": "dallas-bulls-stats",
 	"displayName": "Dallas Bulls Stats",
 	"description": "Notebook renderer and browser app for Dallas Bulls cricket team statistics.",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"private": true,
 	"license": "MIT",
 	"engines": {
